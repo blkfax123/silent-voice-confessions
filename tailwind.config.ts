@@ -26,7 +26,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -52,6 +53,12 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Silent Circle Custom Colors
+				'confession-glow': 'hsl(var(--confession-glow))',
+				'whisper': 'hsl(var(--whisper))',
+				'anonymous': 'hsl(var(--anonymous))',
+				'record-pulse': 'hsl(var(--record-pulse))',
+				'audio-wave': 'hsl(var(--audio-wave))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -88,7 +95,9 @@ export default {
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-record': 'pulse-record 2s infinite',
+				'wave-bounce': 'wave-bounce 1s ease-in-out infinite'
 			}
 		}
 	},
