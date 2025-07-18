@@ -1,155 +1,122 @@
-import { useState } from 'react';
-import { Play, Pause, Heart, Laugh, Frown, Zap } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Play, Heart, Laugh, Frown, Zap } from "lucide-react";
 
 interface ConfessionCardProps {
-  id: string;
-  anonymousId: string;
-  category: string;
-  audioUrl: string;
-  duration: number;
-  reactions: {
-    heart: number;
-    laugh: number;
-    sad: number;
-    mind_blown: number;
+  confession: {
+    id: string;
+    category: string;
+    timestamp: string;
+    reactions: Record<string, number>;
+    hasAudio: boolean;
+    content?: string;
+    audioUrl?: string;
   };
-  isBoosted?: boolean;
-  createdAt: string;
 }
 
-export function ConfessionCard({ 
-  anonymousId, 
-  category, 
-  duration, 
-  reactions,
-  isBoosted = false,
-  createdAt 
-}: ConfessionCardProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
+const ConfessionCard = ({ confession }: ConfessionCardProps) => {
   const [userReaction, setUserReaction] = useState<string | null>(null);
-
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-    // TODO: Implement actual audio playback when Supabase is connected
-  };
 
   const handleReaction = (reaction: string) => {
     setUserReaction(userReaction === reaction ? null : reaction);
-    // TODO: Save reaction to Supabase when connected
-  };
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const timeAgo = (date: string) => {
-    const now = new Date();
-    const past = new Date(date);
-    const diffInHours = Math.floor((now.getTime() - past.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    return `${Math.floor(diffInHours / 24)}d ago`;
+    // TODO: Save reaction to database
   };
 
   return (
-    <div className="confession-card group">
-      {isBoosted && (
-        <div className="flex items-center gap-2 mb-3">
-          <Zap className="w-4 h-4 text-primary-glow" />
-          <span className="text-xs text-primary-glow font-medium">Boosted</span>
+    <div className="bg-card rounded-lg p-4 border border-border/50 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-xs text-muted-foreground">
+            Anonymous {confession.hasAudio ? 'Voice' : 'Text'} #{confession.id.slice(-4)}
+          </span>
+          <span className="text-xs text-muted-foreground">•</span>
+          <span className="text-xs text-muted-foreground">{confession.timestamp}</span>
         </div>
-      )}
-      
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <span className="anonymous-tag">{anonymousId}</span>
-          <span className="text-xs text-muted-foreground">{category}</span>
-        </div>
-        <span className="text-xs text-muted-foreground">{timeAgo(createdAt)}</span>
-      </div>
-
-      {/* Audio Player */}
-      <div className="flex items-center gap-4 mb-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="w-12 h-12 rounded-full bg-primary/10 hover:bg-primary/20"
-          onClick={handlePlayPause}
-        >
-          {isPlaying ? (
-            <Pause className="w-6 h-6 text-primary" />
-          ) : (
-            <Play className="w-6 h-6 text-primary ml-1" />
-          )}
-        </Button>
-
-        {/* Waveform Visualization */}
-        <div className="flex-1 flex items-center gap-1 h-8">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className={`waveform-bar w-1 ${
-                isPlaying && (i % 3 === 0 || i % 5 === 0) 
-                  ? 'animate-wave-bounce' 
-                  : ''
-              }`}
-              style={{
-                height: `${Math.random() * 20 + 10}px`,
-                animationDelay: `${i * 0.1}s`
-              }}
-            />
-          ))}
-        </div>
-
-        <span className="text-xs text-muted-foreground font-mono">
-          {formatDuration(duration)}
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary">
+          {confession.category}
         </span>
       </div>
 
-      {/* Emoji Reactions */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            className={`emoji-reaction ${userReaction === 'heart' ? 'bg-red-500/20' : ''}`}
+      <div className="space-y-3">
+        {confession.hasAudio ? (
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="p-2 rounded-full hover:bg-primary/10"
+            >
+              <Play className="h-5 w-5 text-primary" />
+            </Button>
+            <div className="flex-1 h-8 bg-muted rounded-full flex items-center px-3">
+              <div className="flex space-x-1">
+                {[...Array(20)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-0.5 bg-primary/60 rounded-full"
+                    style={{ height: `${Math.random() * 20 + 5}px` }}
+                  />
+                ))}
+              </div>
+            </div>
+            <span className="text-xs text-muted-foreground">0:43</span>
+          </div>
+        ) : (
+          <div className="bg-muted/50 rounded-lg p-3">
+            <p className="text-sm leading-relaxed">{confession.content}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center space-x-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 px-2 rounded-full ${userReaction === 'heart' ? 'bg-red-500/20 text-red-500' : ''}`}
             onClick={() => handleReaction('heart')}
           >
-            <Heart className="w-4 h-4" />
-            <span className="text-xs ml-1">{reactions.heart}</span>
-          </button>
-          
-          <button
-            className={`emoji-reaction ${userReaction === 'laugh' ? 'bg-yellow-500/20' : ''}`}
+            <Heart className="h-4 w-4 mr-1" />
+            <span className="text-xs">{confession.reactions.heart || 0}</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 px-2 rounded-full ${userReaction === 'laugh' ? 'bg-yellow-500/20 text-yellow-500' : ''}`}
             onClick={() => handleReaction('laugh')}
           >
-            <Laugh className="w-4 h-4" />
-            <span className="text-xs ml-1">{reactions.laugh}</span>
-          </button>
-          
-          <button
-            className={`emoji-reaction ${userReaction === 'sad' ? 'bg-blue-500/20' : ''}`}
+            <Laugh className="h-4 w-4 mr-1" />
+            <span className="text-xs">{confession.reactions.laugh || 0}</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 px-2 rounded-full ${userReaction === 'sad' ? 'bg-blue-500/20 text-blue-500' : ''}`}
             onClick={() => handleReaction('sad')}
           >
-            <Frown className="w-4 h-4" />
-            <span className="text-xs ml-1">{reactions.sad}</span>
-          </button>
-          
-          <button
-            className={`emoji-reaction ${userReaction === 'mind_blown' ? 'bg-purple-500/20' : ''}`}
-            onClick={() => handleReaction('mind_blown')}
+            <Frown className="h-4 w-4 mr-1" />
+            <span className="text-xs">{confession.reactions.sad || 0}</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 px-2 rounded-full ${userReaction === 'wow' ? 'bg-purple-500/20 text-purple-500' : ''}`}
+            onClick={() => handleReaction('wow')}
           >
-            <Zap className="w-4 h-4" />
-            <span className="text-xs ml-1">{reactions.mind_blown}</span>
-          </button>
+            <Zap className="h-4 w-4 mr-1" />
+            <span className="text-xs">{confession.reactions.wow || 0}</span>
+          </Button>
         </div>
 
-        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary">
+        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">
           Reply
         </Button>
       </div>
     </div>
   );
-}
+};
+
+export default ConfessionCard;

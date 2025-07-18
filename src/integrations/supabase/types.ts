@@ -14,6 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
+      confessions: {
+        Row: {
+          audio_url: string | null
+          category: string
+          confession_type: string
+          content: string | null
+          created_at: string
+          id: string
+          is_boosted: boolean | null
+          is_deleted: boolean | null
+          reactions: Json | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          category: string
+          confession_type: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_boosted?: boolean | null
+          is_deleted?: boolean | null
+          reactions?: Json | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          category?: string
+          confession_type?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_boosted?: boolean | null
+          is_deleted?: boolean | null
+          reactions?: Json | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      login_logs: {
+        Row: {
+          id: string
+          ip_address: string | null
+          login_success: boolean
+          timestamp: string
+          user_id: string | null
+          username_attempted: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          login_success: boolean
+          timestamp?: string
+          user_id?: string | null
+          username_attempted?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          login_success?: boolean
+          timestamp?: string
+          user_id?: string | null
+          username_attempted?: string | null
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_admin: boolean | null
+          is_verified: boolean | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_admin?: boolean | null
+          is_verified?: boolean | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_admin?: boolean | null
+          is_verified?: boolean | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      verification_requests: {
+        Row: {
+          id: string
+          status: string | null
+          submitted_at: string
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          status?: string | null
+          submitted_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          status?: string | null
+          submitted_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       Ysusu: {
         Row: {
           created_at: string
@@ -34,7 +154,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      log_login_attempt: {
+        Args: {
+          p_user_id: string
+          p_username: string
+          p_success: boolean
+          p_ip_address?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

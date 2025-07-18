@@ -1,25 +1,32 @@
-import { useState } from 'react';
-import { Mic, Square, Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Mic, Square, Play, Type, FileAudio } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
-const categories = ['Love', 'Guilt', 'Career', 'Dreams', 'Random'];
-
-export function RecordButton() {
+const RecordButton = () => {
+  const { user } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [textConfession, setTextConfession] = useState("");
+  const [confessionType, setConfessionType] = useState<"text" | "voice">("voice");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const categories = ["Love", "Guilt", "Career", "Dreams", "Random"];
 
   const startRecording = () => {
     setIsRecording(true);
     setRecordingTime(0);
-    setShowDialog(true);
     
-    // TODO: Implement actual audio recording
-    // For now, simulate recording timer
+    // Simulate recording timer
     const timer = setInterval(() => {
       setRecordingTime(prev => {
         if (prev >= 60) {
@@ -34,20 +41,131 @@ export function RecordButton() {
 
   const stopRecording = () => {
     setIsRecording(false);
-    // TODO: Stop actual audio recording and get blob
+    // Simulate audio blob creation
+    const fakeAudioData = new Uint8Array(1024);
+    setAudioBlob(new Blob([fakeAudioData], { type: 'audio/webm' }));
   };
 
-  const submitConfession = () => {
-    if (!selectedCategory || !audioBlob) return;
-    
-    // TODO: Upload to Supabase when connected
-    console.log('Submitting confession:', { category: selectedCategory, duration: recordingTime });
-    
-    // Reset state
-    setShowDialog(false);
-    setSelectedCategory('');
-    setAudioBlob(null);
-    setRecordingTime(0);
+  const compressAudio = async (audioBlob: Blob): Promise<Blob> => {
+    // Create audio context for compression
+    try {
+      const audioContext = new AudioContext();
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      
+      // Reduce sample rate and bit depth for extreme compression
+      const sampleRate = 8000; // Very low sample rate
+      const channels = 1; // Mono
+      const length = Math.floor(audioBuffer.duration * sampleRate);
+      
+      const offlineContext = new OfflineAudioContext(channels, length, sampleRate);
+      const source = offlineContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(offlineContext.destination);
+      source.start();
+      
+      const compressedBuffer = await offlineContext.startRendering();
+      
+      // Convert to very low quality to achieve target size
+      const float32Array = compressedBuffer.getChannelData(0);
+      const int16Array = new Int16Array(float32Array.length);
+      
+      // Convert float32 to int16 with compression
+      for (let i = 0; i < float32Array.length; i++) {
+        int16Array[i] = Math.max(-32768, Math.min(32767, float32Array[i] * 32767));
+      }
+      
+      return new Blob([int16Array], { type: 'audio/wav' });
+    } catch (error) {
+      // If compression fails, return original blob
+      return audioBlob;
+    }
+  };
+
+  const submitConfession = async () => {
+    if (!user) {
+      toast({
+        title: "Please sign in to share a confession",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedCategory) {
+      toast({
+        title: "Please select a category",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (confessionType === "voice" && !audioBlob) {
+      toast({
+        title: "No recording found",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (confessionType === "text" && !textConfession.trim()) {
+      toast({
+        title: "Please write your confession",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      let audioUrl = null;
+      
+      if (confessionType === "voice" && audioBlob) {
+        // Compress audio before upload
+        const compressedAudio = await compressAudio(audioBlob);
+        
+        const fileName = `${user.id}/${Date.now()}-confession.wav`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('confessions-audio')
+          .upload(fileName, compressedAudio);
+
+        if (uploadError) throw uploadError;
+        audioUrl = uploadData.path;
+      }
+
+      // Save confession to database
+      const { error: insertError } = await supabase
+        .from('confessions')
+        .insert({
+          user_id: user.id,
+          content: confessionType === "text" ? textConfession : null,
+          audio_url: audioUrl,
+          category: selectedCategory,
+          confession_type: confessionType
+        });
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Confession shared anonymously",
+        description: `Category: ${selectedCategory}`
+      });
+
+      // Reset state
+      setShowDialog(false);
+      setSelectedCategory("");
+      setAudioBlob(null);
+      setTextConfession("");
+      setRecordingTime(0);
+    } catch (error: any) {
+      toast({
+        title: "Failed to share confession",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -59,110 +177,157 @@ export function RecordButton() {
   return (
     <>
       <Button
-        className={`record-button fixed bottom-6 right-6 w-16 h-16 rounded-full z-50 ${
-          isRecording ? 'recording' : ''
-        }`}
-        onClick={isRecording ? stopRecording : startRecording}
-        size="icon"
+        onClick={() => {
+          if (!user) {
+            toast({
+              title: "Please sign in to share a confession",
+              variant: "destructive"
+            });
+            return;
+          }
+          setShowDialog(true);
+        }}
+        size="lg"
+        className="rounded-full h-16 w-16 bg-primary hover:bg-primary/90 shadow-lg fixed bottom-6 right-6 z-50"
       >
-        {isRecording ? (
-          <Square className="w-6 h-6" />
-        ) : (
-          <Mic className="w-6 h-6" />
-        )}
+        <Mic className="h-8 w-8" />
       </Button>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="bg-card border-border">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="gradient-text">
-              {isRecording ? 'Recording...' : 'Share Your Confession'}
-            </DialogTitle>
+            <DialogTitle>Share Your Confession</DialogTitle>
           </DialogHeader>
-
-          <div className="space-y-6">
-            {isRecording ? (
-              <div className="text-center space-y-4">
-                <div className="w-24 h-24 mx-auto bg-record-pulse/20 rounded-full flex items-center justify-center animate-pulse-record">
-                  <Mic className="w-8 h-8 text-record-pulse" />
-                </div>
+          
+          {isRecording ? (
+            <div className="space-y-6 text-center">
+              <div className="text-2xl font-mono text-primary">
+                {formatTime(recordingTime)}
+              </div>
+              
+              {/* Animated waveform */}
+              <div className="flex items-center justify-center space-x-1 h-16">
+                {[...Array(20)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1 bg-primary rounded-full animate-pulse"
+                    style={{
+                      height: `${Math.random() * 60 + 10}px`,
+                      animationDelay: `${i * 0.1}s`
+                    }}
+                  />
+                ))}
+              </div>
+              
+              <Button 
+                onClick={stopRecording}
+                size="lg"
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                <Square className="mr-2 h-5 w-5" />
+                Stop Recording
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <Tabs value={confessionType} onValueChange={(value) => setConfessionType(value as "text" | "voice")}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="text" className="flex items-center gap-2">
+                    <Type className="h-4 w-4" />
+                    Text
+                  </TabsTrigger>
+                  <TabsTrigger value="voice" className="flex items-center gap-2">
+                    <FileAudio className="h-4 w-4" />
+                    Voice
+                  </TabsTrigger>
+                </TabsList>
                 
-                <div className="space-y-2">
-                  <div className="text-2xl font-mono text-primary">
-                    {formatTime(recordingTime)} / 1:00
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Speak your truth anonymously
-                  </div>
-                </div>
-
-                {/* Recording Waveform */}
-                <div className="flex justify-center items-center gap-1 h-12">
-                  {[...Array(15)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="waveform-bar w-2 bg-record-pulse animate-wave-bounce"
-                      style={{
-                        height: `${Math.random() * 30 + 10}px`,
-                        animationDelay: `${i * 0.1}s`
-                      }}
+                <TabsContent value="text" className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Your Confession</label>
+                    <Textarea 
+                      placeholder="Share your thoughts anonymously..."
+                      value={textConfession}
+                      onChange={(e) => setTextConfession(e.target.value)}
+                      className="min-h-32"
+                      maxLength={500}
                     />
-                  ))}
-                </div>
+                    <div className="text-xs text-muted-foreground text-right">
+                      {textConfession.length}/500 characters
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="voice" className="space-y-4">
+                  {!audioBlob ? (
+                    <div className="text-center py-8">
+                      <Button 
+                        onClick={startRecording}
+                        disabled={isRecording}
+                        size="lg"
+                        className="rounded-full h-16 w-16"
+                      >
+                        <Mic className="h-8 w-8" />
+                      </Button>
+                      <p className="text-sm text-muted-foreground mt-4">
+                        Tap to start recording (max 60 seconds)
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Your Recording</label>
+                      <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
+                        <Play className="h-4 w-4" />
+                        <span className="text-sm">Recording ({formatTime(recordingTime)})</span>
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
 
+              <div className="space-y-4">
+                <label className="text-sm font-medium">Category</label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex space-x-3">
                 <Button 
                   variant="outline" 
-                  onClick={stopRecording}
-                  className="bg-destructive/10 border-destructive/30 hover:bg-destructive/20"
+                  onClick={() => setShowDialog(false)}
+                  className="flex-1"
                 >
-                  <Square className="w-4 h-4 mr-2" />
-                  Stop Recording
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={submitConfession}
+                  className="flex-1"
+                  disabled={
+                    !selectedCategory || 
+                    (confessionType === "voice" && !audioBlob) ||
+                    (confessionType === "text" && !textConfession.trim()) ||
+                    isSubmitting
+                  }
+                >
+                  {isSubmitting ? "Sharing..." : "Share Anonymously"}
                 </Button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="text-sm text-muted-foreground mb-4">
-                    Your confession has been recorded ({formatTime(recordingTime)})
-                  </div>
-                  
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="bg-muted border-border">
-                      <SelectValue placeholder="Choose a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(category => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex gap-3 justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowDialog(false)}
-                    className="border-border"
-                  >
-                    Cancel
-                  </Button>
-                  
-                  <Button
-                    onClick={submitConfession}
-                    disabled={!selectedCategory}
-                    className="bg-primary hover:bg-primary-glow"
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    Share Anonymously
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
   );
-}
+};
+
+export default RecordButton;
