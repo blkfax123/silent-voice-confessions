@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          audio_url: string | null
+          id: string
+          is_deleted: boolean | null
+          message_text: string | null
+          message_type: string | null
+          room_id: string | null
+          sender_id: string | null
+          sent_at: string
+        }
+        Insert: {
+          audio_url?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          message_text?: string | null
+          message_type?: string | null
+          room_id?: string | null
+          sender_id?: string | null
+          sent_at?: string
+        }
+        Update: {
+          audio_url?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          message_text?: string | null
+          message_type?: string | null
+          room_id?: string | null
+          sender_id?: string | null
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_rooms: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          is_active: boolean | null
+          room_type: string
+          target_gender: string | null
+          user1_id: string | null
+          user2_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          room_type?: string
+          target_gender?: string | null
+          user1_id?: string | null
+          user2_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          room_type?: string
+          target_gender?: string | null
+          user1_id?: string | null
+          user2_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_rooms_user1_id_fkey"
+            columns: ["user1_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_rooms_user2_id_fkey"
+            columns: ["user2_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       confessions: {
         Row: {
           audio_url: string | null
@@ -83,33 +179,104 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          expires_at: string
+          id: string
+          payment_id: string | null
+          payment_method: string
+          plan_type: string
+          starts_at: string
+          status: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          expires_at: string
+          id?: string
+          payment_id?: string | null
+          payment_method: string
+          plan_type: string
+          starts_at?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          expires_at?: string
+          id?: string
+          payment_id?: string | null
+          payment_method?: string
+          plan_type?: string
+          starts_at?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
+          country: string | null
           created_at: string
           email: string | null
+          gender: string | null
           id: string
           is_admin: boolean | null
           is_verified: boolean | null
+          subscription_expires_at: string | null
+          subscription_type: string | null
+          theme_preference: string | null
           updated_at: string
           username: string | null
+          username_color: string | null
         }
         Insert: {
+          country?: string | null
           created_at?: string
           email?: string | null
+          gender?: string | null
           id?: string
           is_admin?: boolean | null
           is_verified?: boolean | null
+          subscription_expires_at?: string | null
+          subscription_type?: string | null
+          theme_preference?: string | null
           updated_at?: string
           username?: string | null
+          username_color?: string | null
         }
         Update: {
+          country?: string | null
           created_at?: string
           email?: string | null
+          gender?: string | null
           id?: string
           is_admin?: boolean | null
           is_verified?: boolean | null
+          subscription_expires_at?: string | null
+          subscription_type?: string | null
+          theme_preference?: string | null
           updated_at?: string
           username?: string | null
+          username_color?: string | null
         }
         Relationships: []
       }
@@ -154,6 +321,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_active_subscription: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       log_login_attempt: {
         Args: {
           p_user_id: string

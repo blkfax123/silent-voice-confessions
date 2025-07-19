@@ -1,0 +1,35 @@
+{
+  "name": "Silent Circle",
+  "short_name": "Silent Circle",
+  "description": "Anonymous confessions and connections",
+  "theme_color": "#7C3AED",
+  "background_color": "#0F0F23",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "192x192",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "512x512",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["social", "lifestyle"],
+  "lang": "en-US"
+}
