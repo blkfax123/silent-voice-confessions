@@ -11,11 +11,11 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0', // Allow external connections (needed for Render)
-    port: 10000,     // Port matches your package.json start script
+    host: '0.0.0.0',
+    port: parseInt(process.env.PORT || '5173'), // Use Render's dynamic port or fallback
   },
   build: {
-    outDir: 'dist', // Output directory for production build
+    outDir: 'dist',
     sourcemap: false,
   },
 });
