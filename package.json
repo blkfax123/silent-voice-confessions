@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 10000 --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0 --port $PORT",
+    "start": "vite preview --host 0.0.0.0 --port $PORT"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",
