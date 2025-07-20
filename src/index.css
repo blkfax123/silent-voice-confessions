@@ -90,7 +90,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background-image: var(--gradient-whisper);
+    background: linear-gradient(135deg, hsl(230 15% 5%), hsl(260 20% 8%), hsl(270 25% 10%));
     min-height: 100vh;
   }
 
@@ -150,6 +150,15 @@ All colors MUST be HSL.
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  .glow-effect {
+    box-shadow: 0 0 20px hsl(var(--primary-glow) / 0.5);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .nav-glow {
+    filter: drop-shadow(0 0 8px hsl(var(--primary-glow) / 0.6));
+  }
 }
 
 @keyframes pulse-record {
@@ -167,5 +176,14 @@ All colors MUST be HSL.
   }
   50% {
     transform: scaleY(1.5);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px hsl(var(--primary-glow) / 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px hsl(var(--primary-glow) / 0.8));
   }
 }

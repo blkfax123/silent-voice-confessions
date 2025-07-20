@@ -75,55 +75,26 @@ const Index = () => {
         <GenderSelection onComplete={() => setShowGenderSelection(false)} />
       )}
 
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="flex items-center justify-between p-4">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="text-2xl font-bold gradient-text">
-              Silent Circle
-            </h1>
-            <p className="text-sm text-muted-foreground">Anonymous confessions</p>
-          </motion.div>
-          
-          <div className="flex items-center space-x-2">
-            {user ? (
-              <>
-                {userProfile && (
-                  <span className="text-sm text-muted-foreground">
-                    Welcome, {userProfile.username || 'Anonymous'}
-                  </span>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="h-4 w-4 mr-1" />
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <Link to="/auth">
-                <Button
-                  variant="outline"
-                  size="sm"
-                >
-                  <User className="h-4 w-4 mr-1" />
-                  Sign In
-                </Button>
-              </Link>
-            )}
-          </div>
-        </div>
+      <header className="flex flex-col items-center pt-8 pb-6">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex flex-col items-center space-y-4"
+        >
+          <img 
+            src="/src/assets/logo.svg" 
+            alt="Silent Circle Logo" 
+            className="w-16 h-16 glow-effect"
+          />
+          <Heart className="h-12 w-12 text-primary-glow glow-effect" />
+        </motion.div>
       </header>
 
       <main className="max-w-4xl mx-auto p-4">
         <Tabs defaultValue="feed" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="feed" className="flex items-center space-x-2">
+          <TabsList className="grid w-full grid-cols-2 bg-card/50 backdrop-blur-md">
+            <TabsTrigger value="feed" className="flex items-center space-x-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Heart className="h-4 w-4" />
               <span>Feed</span>
             </TabsTrigger>
@@ -170,11 +141,14 @@ const Index = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5 }}
-                  className="text-center py-12"
+                  className="text-center py-16 space-y-6"
                 >
-                  <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No confessions yet</h3>
-                  <p className="text-muted-foreground">Be the first to share your story!</p>
+                  <Heart className="h-16 w-16 text-primary-glow mx-auto glow-effect" />
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-foreground">No confessions yet..</h3>
+                    <p className="text-lg text-muted-foreground">Be the first to open the circle.</p>
+                    <p className="text-base text-muted-foreground">Tap the + button below to share anonymously.</p>
+                  </div>
                 </motion.div>
               )}
             </div>

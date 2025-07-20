@@ -30,13 +30,13 @@ export const BottomNavigation = () => {
                 <motion.div
                   className={`p-2 rounded-xl transition-all duration-200 ${
                     isActive 
-                      ? "bg-primary text-primary-foreground shadow-lg" 
+                      ? "bg-primary text-primary-foreground shadow-lg nav-glow" 
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className={`h-5 w-5 ${isActive ? 'nav-glow' : ''}`} />
                 </motion.div>
                 
                 {isActive && (
@@ -49,7 +49,7 @@ export const BottomNavigation = () => {
                 )}
                 
                 <span className={`text-xs mt-1 transition-colors duration-200 ${
-                  isActive ? "text-primary font-medium" : "text-muted-foreground"
+                  isActive ? "text-primary-glow font-medium" : "text-muted-foreground"
                 }`}>
                   {item.name}
                 </span>
