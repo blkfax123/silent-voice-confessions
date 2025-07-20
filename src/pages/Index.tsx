@@ -18,12 +18,25 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [showGenderSelection, setShowGenderSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [onlineCount, setOnlineCount] = useState(0);
 
   useEffect(() => {
     fetchConfessions();
     if (user) {
       checkUserProfile();
     }
+    
+    // Simulate online count
+    const updateOnlineCount = () => {
+      const baseCount = 45;
+      const variation = Math.floor(Math.random() * 20) - 10;
+      setOnlineCount(baseCount + variation);
+    };
+    
+    updateOnlineCount();
+    const interval = setInterval(updateOnlineCount, 30000); // Update every 30 seconds
+    
+    return () => clearInterval(interval);
   }, [user]);
 
   const checkUserProfile = async () => {
@@ -101,6 +114,7 @@ const Index = () => {
             <TabsTrigger value="whisper" className="flex items-center space-x-2">
               <Radio className="h-4 w-4" />
               <span>Whisper Room</span>
+              <span className="text-xs text-green-400">• {onlineCount} online</span>
             </TabsTrigger>
           </TabsList>
 

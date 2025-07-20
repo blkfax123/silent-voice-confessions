@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   User, Crown, Palette, Bell, Shield, CreditCard, 
   LogOut, Settings, Edit, CheckCircle
@@ -20,6 +23,14 @@ const Profile = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    gender: "",
+    theme_preference: "",
+    country: ""
+  });
 
   useEffect(() => {
     if (user) {
@@ -38,6 +49,12 @@ const Profile = () => {
 
       if (profileError) throw profileError;
       setUserProfile(profile);
+      setFormData({
+        username: profile.username || "",
+        gender: profile.gender || "",
+        theme_preference: profile.theme_preference || "dark",
+        country: profile.country || "global"
+      });
 
       // Fetch active subscription
       const { data: sub, error: subError } = await supabase
@@ -55,6 +72,34 @@ const Profile = () => {
       console.error('Error fetching user data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateProfile = async () => {
+    setUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update(formData)
+        .eq('id', user?.id);
+
+      if (error) throw error;
+      
+      await fetchUserData();
+      setEditing(false);
+      toast({
+        title: "Success",
+        description: "Profile updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -142,7 +187,7 @@ const Profile = () => {
                     <CheckCircle className="inline h-5 w-5 ml-1 text-blue-400" />
                   )}
                 </h2>
-                <p className="text-muted-foreground">{userProfile?.email}</p>
+                <p className="text-muted-foreground">{user.email}</p>
                 <div className="flex items-center space-x-2 mt-2">
                   <Badge 
                     variant={userProfile?.subscription_type === 'free' ? 'secondary' : 'default'}
@@ -157,12 +202,87 @@ const Profile = () => {
                   )}
                 </div>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setEditing(!editing)}>
                 <Edit className="h-4 w-4" />
               </Button>
             </div>
           </CardContent>
         </Card>
+
+        {/* Edit Profile Form */}
+        {editing && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Edit Profile</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  placeholder="Enter username"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="gender">Gender</Label>
+                <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="theme">Theme</Label>
+                <Select value={formData.theme_preference} onValueChange={(value) => setFormData({ ...formData, theme_preference: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select theme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="neon">Neon</SelectItem>
+                    <SelectItem value="minimalist">Minimalist</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <Select value={formData.country} onValueChange={(value) => setFormData({ ...formData, country: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="global">Global</SelectItem>
+                    <SelectItem value="india">India</SelectItem>
+                    <SelectItem value="usa">USA</SelectItem>
+                    <SelectItem value="uk">UK</SelectItem>
+                    <SelectItem value="canada">Canada</SelectItem>
+                    <SelectItem value="australia">Australia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button onClick={updateProfile} disabled={updating} className="flex-1">
+                  {updating ? "Saving..." : "Save Changes"}
+                </Button>
+                <Button variant="outline" onClick={() => setEditing(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Subscription Card */}
         {subscription ? (
@@ -195,10 +315,12 @@ const Profile = () => {
                   {subscription.currency === 'INR' ? '₹' : '$'}{subscription.amount}
                 </span>
               </div>
-              <Button variant="outline" className="w-full">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Manage Subscription
-              </Button>
+              <Link to="/subscription">
+                <Button variant="outline" className="w-full">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Manage Subscription
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         ) : (
@@ -231,10 +353,12 @@ const Profile = () => {
                   <span className="text-sm">Colored username</span>
                 </div>
               </div>
-              <Button className="w-full">
-                <Crown className="h-4 w-4 mr-2" />
-                View Plans
-              </Button>
+              <Link to="/subscription">
+                <Button className="w-full">
+                  <Crown className="h-4 w-4 mr-2" />
+                  View Plans
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         )}
