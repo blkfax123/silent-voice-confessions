@@ -61,7 +61,7 @@ const Chat = () => {
   const [messagesSubscription, setMessagesSubscription] = useState<any>(null);
   const [typingSubscription, setTypingSubscription] = useState<any>(null);
 
-  const emojis = ['😀', '😂', '😍', '🥰', '😊', '🤔', '😮', '😢', '😡', '👍', '👎', '❤️', '🔥', '⭐'];
+  const emojis = ['ðŸ˜€', 'ðŸ˜‚', 'ðŸ˜', 'ðŸ¥°', 'ðŸ˜Š', 'ðŸ¤”', 'ðŸ˜®', 'ðŸ˜¢', 'ðŸ˜¡', 'ðŸ‘', 'ðŸ‘Ž', 'â¤ï¸', 'ðŸ”¥', 'â­'];
   const reactions = [
     { icon: Heart, color: 'text-red-500', type: 'heart' },
     { icon: ThumbsUp, color: 'text-blue-500', type: 'like' },
@@ -641,7 +641,7 @@ const Chat = () => {
         <div className="sticky top-0 bg-background/80 backdrop-blur border-b p-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Button variant="ghost" size="sm" onClick={() => setCurrentRoom(null)}>
-              ← Back
+              â† Back
             </Button>
             <div>
               <p className="font-medium">
@@ -690,49 +690,34 @@ const Chat = () => {
                       className={`p-3 rounded-lg ${
                         isOwn
                           ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                      }`}
+                          : 'bg-muted text-muted-foreground'
+                        }`}
                     >
                       {message.message_type === 'image' && message.image_url ? (
                         <img
                           src={message.image_url}
-                          alt="Shared image"
-                          className="max-w-full h-auto rounded"
+                          alt="Sent"
+                          className="max-w-xs rounded-md"
                         />
                       ) : (
                         <p>{message.content}</p>
                       )}
-                      
-                      {/* Reactions */}
-                      {message.reactions && message.reactions.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {message.reactions.map((reaction: any) => (
-                            <Badge key={reaction.id} variant="secondary" className="text-xs">
-                              {reaction.reaction_type}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center mt-1 space-x-2">
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(message.created_at).toLocaleTimeString()}
-                      </p>
-                      
-                      {/* Reaction buttons */}
-                      <div className="flex space-x-1">
-                        {reactions.map((reaction) => (
-                          <Button
-                            key={reaction.type}
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => addReaction(message.id, reaction.type)}
-                          >
-                            <reaction.icon className={`h-3 w-3 ${reaction.color}`} />
-                          </Button>
-                        ))}
+
+                      <div className="flex gap-2 mt-2">
+                        {reactions.map((r) => {
+                          const Icon = r.icon;
+                          return (
+                            <Button
+                              key={r.type}
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => addReaction(message.id, r.type)}
+                              className={r.color}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </Button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -743,172 +728,34 @@ const Chat = () => {
           <div ref={messagesEndRef} />
         </ScrollArea>
 
-        {/* Image Preview */}
-        {imagePreview && (
-          <div className="p-4 border-t bg-muted/30">
-            <div className="flex items-center space-x-2">
-              <img src={imagePreview} alt="Preview" className="h-12 w-12 rounded object-cover" />
-              <p className="text-sm text-muted-foreground">Image ready to send</p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedImage(null);
-                  setImagePreview(null);
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Emoji Picker */}
-        {showEmojiPicker && (
-          <div className="absolute bottom-32 left-4 right-4 bg-background border rounded-lg p-4 shadow-lg">
-            <div className="grid grid-cols-7 gap-2">
-              {emojis.map((emoji, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setMessageText(prev => prev + emoji);
-                    setShowEmojiPicker(false);
-                  }}
-                >
-                  {emoji}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Message Input */}
-        <div className="sticky bottom-0 bg-background border-t p-4">
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <ImageIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            >
-              <Smile className="h-4 w-4" />
-            </Button>
-            
-            <Textarea
-              value={messageText}
-              onChange={(e) => handleTyping(e.target.value)}
-              placeholder="Type your message..."
-              className="min-h-[40px] resize-none"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-            />
-            
-            <Button onClick={sendMessage} disabled={!messageText.trim() && !selectedImage}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
+        {/* Input Area */}
+        <div className="p-4 border-t bg-background flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          >
+            <Smile className="h-5 w-5" />
+          </Button>
+          <Input
+            value={messageText}
+            onChange={(e) => handleTyping(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+            placeholder="Type your message..."
+            className="flex-1"
+          />
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleImageSelect}
+          />
+          <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="h-5 w-5" />
+          </Button>
+          <Button onClick={sendMessage} disabled={!messageText.trim() && !selectedImage}>
+            <Send className="h-4 w-4 mr-1" /> Send
+          </Button>
         </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleImageSelect}
-          className="hidden"
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''} bg-background pb-20`}>
-      <div className="p-4 space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold gradient-text">Anonymous Chat</h1>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDarkMode(!darkMode)}
-            >
-              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-          </div>
-          <p className="text-muted-foreground">Connect with strangers around the world</p>
-          <Badge variant="secondary" className="bg-green-500/20 text-green-400">
-            {onlineCount} users online
-          </Badge>
-        </div>
-
-        {/* User Info */}
-        {userProfile && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`font-medium ${getUsernameColor(userProfile.subscription_type)}`}>
-                    {userProfile.username || 'Anonymous'}
-                    {userProfile.subscription_type !== 'free' && (
-                      <Crown className="inline h-4 w-4 ml-1 text-yellow-400" />
-                    )}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {userProfile.gender || 'Gender not set'}
-                  </p>
-                </div>
-                <Badge variant={userProfile.subscription_type === 'free' ? 'secondary' : 'default'}>
-                  {userProfile.subscription_type}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Start New Chat */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Start New Chat</h2>
-          
-          {/* Random Chat */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Shuffle className="h-5 w-5" />
-                <span>Random Chat</span>
-                <Badge variant="secondary">Free</Badge>
-              </CardTitle>
-              <CardDescription>
-                Connect with any random user for anonymous conversations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={startRandomChat} 
-                disabled={loading || waitingForMatch}
-                className="w-full"
-              >
-                {loading || waitingForMatch ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {waitingForMatch ? "Waiting for someone..." : "Connecting..."}
-                  </>
-                ) : (
-                  "Start Random Chat"
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {
+              
