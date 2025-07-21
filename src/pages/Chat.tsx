@@ -46,7 +46,7 @@ const Chat = () => {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
 
       if (error) throw error;
@@ -61,7 +61,7 @@ const Chat = () => {
       const { data, error } = await supabase
         .from('chat_rooms')
         .select('*')
-        .or(`user1_id.eq.${user?.id},user2_id.eq.${user?.id}`)
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
@@ -73,13 +73,18 @@ const Chat = () => {
   };
 
   const startRandomChat = async () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
     setLoading(true);
     try {
       // Find someone to chat with (excluding current user)
       const { data: availableUsers, error } = await supabase
         .from('users')
         .select('id')
-        .neq('id', user?.id)
+        .neq('id', user.id)
         .limit(10);
 
       if (error) throw error;
@@ -106,7 +111,7 @@ const Chat = () => {
       const { data: newRoom, error: roomError } = await supabase
         .from('chat_rooms')
         .insert({
-          user1_id: user?.id,
+          user1_id: user.id,
           user2_id: randomUser.id,
           room_type: 'random'
         })
@@ -134,6 +139,11 @@ const Chat = () => {
   };
 
   const startGenderSpecificChat = async (targetGender: string) => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
     setLoading(true);
     try {
       // Check if user has active subscription
@@ -147,7 +157,7 @@ const Chat = () => {
         .from('users')
         .select('id')
         .eq('gender', targetGender)
-        .neq('id', user?.id)
+        .neq('id', user.id)
         .limit(10);
 
       if (error) throw error;
@@ -164,7 +174,7 @@ const Chat = () => {
       const { data: newRoom, error: roomError } = await supabase
         .from('chat_rooms')
         .insert({
-          user1_id: user?.id,
+          user1_id: user.id,
           user2_id: randomUser.id,
           room_type: 'specific_gender',
           target_gender: targetGender
@@ -197,7 +207,7 @@ const Chat = () => {
       const { data, error } = await supabase
         .from('subscriptions')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .eq('status', 'active')
         .gt('expires_at', new Date().toISOString())
         .single();

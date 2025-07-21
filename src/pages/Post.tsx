@@ -29,11 +29,7 @@ const Post = () => {
 
   const handleTextPost = async () => {
     if (!user) {
-      toast({
-        title: "Please sign in",
-        description: "You need to be logged in to post.",
-        variant: "destructive",
-      });
+      navigate('/auth');
       return;
     }
 
@@ -206,14 +202,49 @@ const Post = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">
-                      Tap the record button below to start recording your voice confession
-                    </p>
-                    <div className="text-xs text-muted-foreground">
-                      Your voice will be compressed and anonymized for privacy
+                  {!user ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground mb-4">
+                        Please sign in to record voice confessions
+                      </p>
+                      <Button onClick={() => navigate('/auth')} variant="outline">
+                        Sign In
+                      </Button>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      {/* Category Selector for Voice */}
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Category</label>
+                        <Select value={category} onValueChange={setCategory}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((cat) => (
+                              <SelectItem key={cat} value={cat}>
+                                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="text-center py-8">
+                        <div className="space-y-4">
+                          <div className="bg-primary/10 border border-primary/20 rounded-full w-20 h-20 mx-auto flex items-center justify-center">
+                            <Mic className="h-8 w-8 text-primary" />
+                          </div>
+                          <p className="text-muted-foreground">
+                            Tap the floating record button to start recording
+                          </p>
+                          <div className="text-xs text-muted-foreground">
+                            Your voice will be compressed and anonymized for privacy
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -237,8 +268,12 @@ const Post = () => {
         </Card>
       </div>
 
-      {/* Voice Recording Button (only for voice posts) */}
-      {postType === 'voice' && user && <RecordButton />}
+      {/* Voice Recording Button (only for voice posts and when user is logged in) */}
+      {postType === 'voice' && user && (
+        <div className="fixed bottom-24 right-4">
+          <RecordButton />
+        </div>
+      )}
 
       <BottomNavigation />
     </div>
