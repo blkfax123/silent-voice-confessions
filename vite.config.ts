@@ -12,7 +12,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: parseInt(process.env.PORT || '5173'), // Use Render's dynamic port or fallback
+    port: 8080,
   },
   build: {
     outDir: 'dist',

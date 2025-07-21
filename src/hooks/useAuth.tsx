@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const signUp = async (email: string, password: string, username: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `https://silent-circles.onrender.com/verify`;
     
     const { error } = await supabase.auth.signUp({
       email,

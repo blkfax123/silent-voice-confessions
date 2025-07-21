@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Users, Crown, Shuffle } from "lucide-react";
+import { MessageCircle, Users, Crown, Shuffle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,17 +12,34 @@ import { useToast } from "@/hooks/use-toast";
 
 const Chat = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [activeRooms, setActiveRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [waitingForMatch, setWaitingForMatch] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(0);
 
   useEffect(() => {
     if (user) {
       fetchUserProfile();
       fetchActiveRooms();
+      fetchOnlineCount();
     }
   }, [user]);
+
+  const fetchOnlineCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      setOnlineCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching online count:', error);
+    }
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -67,10 +85,19 @@ const Chat = () => {
       if (error) throw error;
 
       if (!availableUsers || availableUsers.length === 0) {
+        setWaitingForMatch(true);
         toast({
-          title: "No users available",
-          description: "Try again later when more users are online.",
+          title: "Waiting for connection",
+          description: "Looking for someone to chat with...",
         });
+        // Simulate waiting with polling
+        setTimeout(() => {
+          setWaitingForMatch(false);
+          toast({
+            title: "No match found",
+            description: "Try again later when more users are online.",
+          });
+        }, 5000);
         return;
       }
 
@@ -112,11 +139,7 @@ const Chat = () => {
       // Check if user has active subscription
       const hasSubscription = await checkSubscription();
       if (!hasSubscription) {
-        toast({
-          title: "Premium Feature",
-          description: "Subscribe to chat with specific genders.",
-          variant: "destructive",
-        });
+        navigate('/subscription');
         return;
       }
 
@@ -205,6 +228,9 @@ const Chat = () => {
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold gradient-text">Anonymous Chat</h1>
           <p className="text-muted-foreground">Connect with strangers around the world</p>
+          <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+            {onlineCount} users online
+          </Badge>
         </div>
 
         {/* User Info */}
@@ -250,10 +276,17 @@ const Chat = () => {
             <CardContent>
               <Button 
                 onClick={startRandomChat} 
-                disabled={loading}
+                disabled={loading || waitingForMatch}
                 className="w-full"
               >
-                {loading ? "Connecting..." : "Start Random Chat"}
+                {loading || waitingForMatch ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {waitingForMatch ? "Waiting for someone..." : "Connecting..."}
+                  </>
+                ) : (
+                  "Start Random Chat"
+                )}
               </Button>
             </CardContent>
           </Card>
