@@ -757,11 +757,9 @@ const Chat = () => {
           <Button onClick={sendMessage} disabled={!messageText.trim() && !selectedImage}>
             <Send className="h-4 w-4 mr-1" /> Send
           </Button>
+        </Button>
         </div> {/* End of Input Area */}
-      <Button onClick={sendMessage} disabled={!messageText.trim() && !selectedImage}>
-            <Send className="h-4 w-4 mr-1" /> Send
-          </Button>
-        </div> {/* End of Input Area */}
+
         {imagePreview && (
           <div className="mt-2 flex items-center space-x-2">
             <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-md object-cover" />
