@@ -61,7 +61,7 @@ const Chat = () => {
   const [messagesSubscription, setMessagesSubscription] = useState<any>(null);
   const [typingSubscription, setTypingSubscription] = useState<any>(null);
 
-  const emojis = ['ðŸ˜€', 'ðŸ˜‚', 'ðŸ˜', 'ðŸ¥°', 'ðŸ˜Š', 'ðŸ¤”', 'ðŸ˜®', 'ðŸ˜¢', 'ðŸ˜¡', 'ðŸ‘', 'ðŸ‘Ž', 'â¤ï¸', 'ðŸ”¥', 'â­'];
+  const emojis = ['😀', '😂', '😍', '🥰', '😊', '🤔', '😮', '😢', '😡', '👍', '👎', '❤️', '🔥', '⭐'];
   const reactions = [
     { icon: Heart, color: 'text-red-500', type: 'heart' },
     { icon: ThumbsUp, color: 'text-blue-500', type: 'like' },
@@ -641,7 +641,7 @@ const Chat = () => {
         <div className="sticky top-0 bg-background/80 backdrop-blur border-b p-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Button variant="ghost" size="sm" onClick={() => setCurrentRoom(null)}>
-              â† Back
+              ← Back
             </Button>
             <div>
               <p className="font-medium">
@@ -756,34 +756,30 @@ const Chat = () => {
           </Button>
           <Button onClick={sendMessage} disabled={!messageText.trim() && !selectedImage}>
             <Send className="h-4 w-4 mr-1" /> Send
-          <Button onClick={sendMessage} disabled={!messageText.trim() && !selectedImage}>
-  <Send className="h-4 w-4 mr-1" /> Send
-</Button>
-</div> {/* End of Input Area */}
+          </Button>
 
-{imagePreview && (
-  <div className="mt-2 flex items-center space-x-2">
-    <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-md object-cover" />
-    <Button variant="ghost" onClick={() => {
-      setSelectedImage(null);
-      setImagePreview(null);
-    }}>
-      <X className="h-4 w-4 mr-1" /> Remove
-    </Button>
-  </div>
-)}
+          {imagePreview && (
+            <div className="mt-2 flex items-center space-x-2">
+              <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-md object-cover" />
+              <Button variant="ghost" onClick={() => {
+                setSelectedImage(null);
+                setImagePreview(null);
+              }}>
+                <X className="h-4 w-4 mr-1" /> Remove
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
-</div> {/* End of Chat screen wrapper */}
-); // end of if (currentRoom) block
-}
-
-return (
-  <div className="min-h-screen bg-background pb-20">
-    {/* Fallback UI if no room is active */}
-    <p className="p-4 text-muted-foreground text-center">Start a chat to begin messaging.</p>
-    <BottomNavigation />
-  </div>
-);
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <p className="p-4 text-muted-foreground text-center">Start a chat to begin messaging.</p>
+      <BottomNavigation />
+    </div>
+  );
 };
 
 export default Chat;
