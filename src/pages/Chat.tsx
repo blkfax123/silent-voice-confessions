@@ -758,6 +758,21 @@ const Chat = () => {
             <Send className="h-4 w-4 mr-1" /> Send
           </Button>
         </div> {/* End of Input Area */}
+      <Button onClick={sendMessage} disabled={!messageText.trim() && !selectedImage}>
+            <Send className="h-4 w-4 mr-1" /> Send
+          </Button>
+        </div> {/* End of Input Area */}
+        {imagePreview && (
+          <div className="mt-2 flex items-center space-x-2">
+            <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-md object-cover" />
+            <Button variant="ghost" onClick={() => {
+              setSelectedImage(null);
+              setImagePreview(null);
+            }}>
+              <X className="h-4 w-4 mr-1" /> Remove
+            </Button>
+          </div>
+        )}
       </div> {/* End of Chat screen wrapper */}
     );
   }
