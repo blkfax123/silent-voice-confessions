@@ -757,4 +757,18 @@ const Chat = () => {
           <Button onClick={sendMessage} disabled={!messageText.trim() && !selectedImage}>
             <Send className="h-4 w-4 mr-1" /> Send
           </Button>
-        </div>
+        </div> {/* End of Input Area */}
+      </div> {/* End of Chat screen wrapper */}
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      {/* Fallback UI if no room is active */}
+      <p className="p-4 text-muted-foreground text-center">Start a chat to begin messaging.</p>
+      <BottomNavigation />
+    </div>
+  );
+};
+
+export default Chat;
