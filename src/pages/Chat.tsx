@@ -772,17 +772,18 @@ const Chat = () => {
     </Button>
   </div>
 )}
-      </div> {/* End of Chat screen wrapper */}
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Fallback UI if no room is active */}
-      <p className="p-4 text-muted-foreground text-center">Start a chat to begin messaging.</p>
-      <BottomNavigation />
-    </div>
-  );
+</div> {/* End of Chat screen wrapper */}
+); // end of if (currentRoom) block
+}
+
+return (
+  <div className="min-h-screen bg-background pb-20">
+    {/* Fallback UI if no room is active */}
+    <p className="p-4 text-muted-foreground text-center">Start a chat to begin messaging.</p>
+    <BottomNavigation />
+  </div>
+);
 };
 
 export default Chat;
