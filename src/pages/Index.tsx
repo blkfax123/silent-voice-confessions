@@ -82,39 +82,44 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-purple-950/20 to-background pb-20">
       {/* Gender Selection Modal */}
       {showGenderSelection && (
         <GenderSelection onComplete={() => setShowGenderSelection(false)} />
       )}
 
-      <header className="flex flex-col items-center pt-8 pb-6">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col items-center space-y-4"
-        >
-          <img 
-            src="/src/assets/logo.svg" 
-            alt="Silent Circle Logo" 
-            className="w-16 h-16 glow-effect"
-          />
-          <Heart className="h-12 w-12 text-primary-glow glow-effect" />
-        </motion.div>
+      {/* Header with user info */}
+      <header className="flex items-center justify-between p-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+            <User className="h-4 w-4 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">Silent Circle</h1>
+        </div>
+        <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-md border">
+          <div className="w-3 h-3 rounded-full bg-primary"></div>
+          <span className="text-sm text-foreground font-medium">
+            {userProfile?.username || 'Anonymous'}
+          </span>
+        </div>
       </header>
 
       <main className="max-w-4xl mx-auto p-4">
         <Tabs defaultValue="feed" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 bg-card/50 backdrop-blur-md">
-            <TabsTrigger value="feed" className="flex items-center space-x-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsList className="grid w-full grid-cols-2 bg-card/30 backdrop-blur-md border border-white/10">
+            <TabsTrigger 
+              value="feed" 
+              className="flex items-center space-x-2 data-[state=active]:bg-primary/20 data-[state=active]:text-foreground rounded-lg"
+            >
               <Heart className="h-4 w-4" />
               <span>Feed</span>
             </TabsTrigger>
-            <TabsTrigger value="whisper" className="flex items-center space-x-2">
+            <TabsTrigger 
+              value="whisper" 
+              className="flex items-center space-x-2 data-[state=active]:bg-primary/20 data-[state=active]:text-foreground rounded-lg"
+            >
               <Radio className="h-4 w-4" />
               <span>Whisper Room</span>
-              <span className="text-xs text-green-400">• {onlineCount} online</span>
             </TabsTrigger>
           </TabsList>
 
@@ -155,13 +160,30 @@ const Index = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5 }}
-                  className="text-center py-16 space-y-6"
+                  className="text-center py-20 space-y-8"
                 >
-                  <Heart className="h-16 w-16 text-primary-glow mx-auto glow-effect" />
-                  <div className="space-y-2">
-                    <h3 className="text-2xl font-bold text-foreground">No confessions yet..</h3>
-                    <p className="text-lg text-muted-foreground">Be the first to open the circle.</p>
-                    <p className="text-base text-muted-foreground">Tap the + button below to share anonymously.</p>
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.1, 1],
+                      rotate: [0, 5, -5, 0]
+                    }}
+                    transition={{ 
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    <Heart className="h-20 w-20 text-primary mx-auto" style={{
+                      filter: 'drop-shadow(0 0 20px hsl(var(--primary)))',
+                    }} />
+                  </motion.div>
+                  <div className="space-y-4">
+                    <h3 className="text-3xl font-bold text-foreground">No confessions yet..</h3>
+                    <p className="text-xl text-muted-foreground">Be the first to open the circle.</p>
+                    <p className="text-lg text-muted-foreground/80">
+                      Tap the <span className="text-primary font-semibold">+</span> button below to<br />
+                      share anonymously.
+                    </p>
                   </div>
                 </motion.div>
               )}

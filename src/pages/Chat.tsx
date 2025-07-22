@@ -125,7 +125,7 @@ const Chat = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
+          table: 'chat_messages',
           filter: `room_id=eq.${currentRoom.id}`
         },
         (payload) => {
@@ -196,10 +196,7 @@ const Chat = () => {
     try {
       const { data, error } = await supabase
         .from('chat_rooms')
-        .select(`
-          *,
-          messages!inner(id, content, created_at)
-        `)
+        .select('*')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
@@ -216,13 +213,10 @@ const Chat = () => {
     
     try {
       const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          reactions(*)
-        `)
+        .from('chat_messages')
+        .select('*')
         .eq('room_id', currentRoom.id)
-        .order('created_at', { ascending: true });
+        .order('sent_at', { ascending: true });
 
       if (error) throw error;
       setMessages(data || []);
@@ -451,12 +445,12 @@ const Chat = () => {
       }
 
       const { data: message, error } = await supabase
-        .from('messages')
+        .from('chat_messages')
         .insert({
           room_id: currentRoom.id,
-          user_id: user.id,
-          content: messageText || null,
-          image_url: imageUrl,
+          sender_id: user.id,
+          message_text: messageText || null,
+          audio_url: imageUrl,
           message_type: imageUrl ? 'image' : 'text'
         })
         .select()
@@ -471,7 +465,7 @@ const Chat = () => {
       // Auto-clear messages after 24 hours
       setTimeout(async () => {
         await supabase
-          .from('messages')
+          .from('chat_messages')
           .delete()
           .eq('id', message.id);
       }, 24 * 60 * 60 * 1000);
@@ -526,73 +520,6 @@ const Chat = () => {
     }
   };
 
-  const addReaction = async (messageId: string, reactionType: string) => {
-    try {
-      const { error } = await supabase
-        .from('reactions')
-        .insert({
-          message_id: messageId,
-          user_id: user.id,
-          reaction_type: reactionType
-        });
-
-      if (error) throw error;
-      fetchMessages();
-    } catch (error) {
-      console.error('Error adding reaction:', error);
-    }
-  };
-
-  const exportToPDF = async () => {
-    if (!messages.length) return;
-    
-    try {
-      const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
-      
-      doc.setFontSize(16);
-      doc.text('Chat Export', 20, 20);
-      doc.setFontSize(12);
-      doc.text(`Exported on: ${new Date().toLocaleString()}`, 20, 30);
-      
-      let yPosition = 50;
-      
-      messages.forEach((message, index) => {
-        const isOwn = message.user_id === user.id;
-        const sender = isOwn ? 'You' : 'Partner';
-        const content = message.content || '[Image]';
-        const timestamp = new Date(message.created_at).toLocaleTimeString();
-        
-        const text = `${sender} (${timestamp}): ${content}`;
-        const lines = doc.splitTextToSize(text, 170);
-        
-        lines.forEach((line: string) => {
-          if (yPosition > 280) {
-            doc.addPage();
-            yPosition = 20;
-          }
-          doc.text(line, 20, yPosition);
-          yPosition += 7;
-        });
-        
-        yPosition += 3;
-      });
-      
-      doc.save(`chat-export-${Date.now()}.pdf`);
-      
-      toast({
-        title: "Export successful",
-        description: "Chat has been exported to PDF.",
-      });
-    } catch (error) {
-      console.error('Error exporting to PDF:', error);
-      toast({
-        title: "Export failed",
-        description: "Failed to export chat. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const leaveChat = async () => {
     if (!currentRoom) return;
@@ -663,9 +590,6 @@ const Chat = () => {
             >
               {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Button variant="ghost" size="sm" onClick={exportToPDF}>
-              <Download className="h-4 w-4" />
-            </Button>
             <Button variant="ghost" size="sm" onClick={leaveChat}>
               <X className="h-4 w-4" />
             </Button>
@@ -676,9 +600,9 @@ const Chat = () => {
         <ScrollArea className="h-[calc(100vh-180px)] p-4">
           <AnimatePresence>
             {messages.map((message) => {
-              const isOwn = message.user_id === user.id;
+              const isOwn = message.sender_id === user.id;
               return (
-                <motion.div
+                 <motion.div
                   key={message.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -693,33 +617,20 @@ const Chat = () => {
                           : 'bg-muted text-muted-foreground'
                         }`}
                     >
-                      {message.message_type === 'image' && message.image_url ? (
+                      {message.message_type === 'image' && message.audio_url ? (
                         <img
-                          src={message.image_url}
+                          src={message.audio_url}
                           alt="Sent"
                           className="max-w-xs rounded-md"
                         />
                       ) : (
-                        <p>{message.content}</p>
+                        <p>{message.message_text}</p>
                       )}
 
-                      <div className="flex gap-2 mt-2">
-                        {reactions.map((r) => {
-                          const Icon = r.icon;
-                          return (
-                            <Button
-                              key={r.type}
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => addReaction(message.id, r.type)}
-                              className={r.color}
-                            >
-                              <Icon className="w-4 h-4" />
-                            </Button>
-                          );
-                        })}
-                      </div>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-1 px-2">
+                      {new Date(message.sent_at).toLocaleTimeString()}
+                    </p>
                   </div>
                 </motion.div>
               );
@@ -775,8 +686,119 @@ const Chat = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <p className="p-4 text-muted-foreground text-center">Start a chat to begin messaging.</p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-purple-950/20 to-background pb-20">
+      {/* Header */}
+      <div className="sticky top-0 bg-background/80 backdrop-blur border-b p-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-foreground">Chat</h1>
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <span>{onlineCount} online</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-6">
+        {/* Chat Options */}
+        <div className="space-y-4">
+          <Card className="p-6 bg-card/50 backdrop-blur-md border-primary/20">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="flex items-center space-x-2">
+                <Shuffle className="h-5 w-5 text-primary" />
+                <span>Random Chat</span>
+              </CardTitle>
+              <CardDescription>
+                Connect with a random stranger for anonymous conversations
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Button 
+                onClick={startRandomChat} 
+                disabled={loading || waitingForMatch}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                {waitingForMatch ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Waiting for match...
+                  </>
+                ) : loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Starting...
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Start Random Chat
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Gender Specific Chat - Premium Feature */}
+          <Card className="p-6 bg-card/30 backdrop-blur-md border-yellow-500/30">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="flex items-center space-x-2">
+                <Users className="h-5 w-5 text-yellow-500" />
+                <span>Gender Specific Chat</span>
+                <Crown className="h-4 w-4 text-yellow-500" />
+              </CardTitle>
+              <CardDescription>
+                Choose to chat with specific gender (Premium Feature)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 space-y-2">
+              <Button 
+                onClick={() => startGenderSpecificChat('male')} 
+                disabled={loading}
+                variant="outline"
+                className="w-full"
+              >
+                Chat with Males
+              </Button>
+              <Button 
+                onClick={() => startGenderSpecificChat('female')} 
+                disabled={loading}
+                variant="outline"
+                className="w-full"
+              >
+                Chat with Females
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Active Chats */}
+        {activeRooms.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">Active Chats</h3>
+            {activeRooms.map((room) => (
+              <Card key={room.id} className="p-4 bg-card/50 backdrop-blur-md border-primary/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">
+                      {room.room_type === 'random' ? 'Random Chat' : `${room.target_gender} Chat`}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Started {new Date(room.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => setCurrentRoom(room)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
       <BottomNavigation />
     </div>
   );
