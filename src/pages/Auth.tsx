@@ -5,17 +5,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, EyeOff, Github, Mail } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const Auth = () => {
-  const { user, signIn, signUp, signInWithProvider } = useAuth();
+  const { user, signIn, signUp, signInWithProvider, resetPassword } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   
   // Form states
   const [signInData, setSignInData] = useState({ email: '', password: '' });
   const [signUpData, setSignUpData] = useState({ email: '', password: '', confirmPassword: '', username: '' });
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
 
   // Redirect if already authenticated
   if (user) {
@@ -44,6 +47,13 @@ const Auth = () => {
   const handleSocialSignIn = async (provider: 'google' | 'github' | 'twitter') => {
     setIsLoading(true);
     await signInWithProvider(provider);
+    setIsLoading(false);
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    await resetPassword(forgotPasswordEmail);
     setIsLoading(false);
   };
 
@@ -105,6 +115,16 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
+                  <div className="text-center">
+                    <Button 
+                      type="button" 
+                      variant="link" 
+                      className="text-sm text-muted-foreground"
+                      onClick={() => setShowForgotPassword(true)}
+                    >
+                      Forgot Password?
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
 
@@ -196,6 +216,38 @@ const Auth = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Forgot Password Dialog */}
+        <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset Password</DialogTitle>
+              <DialogDescription>
+                Enter your email address and we'll send you a link to reset your password.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">Email</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex space-x-2">
+                <Button type="submit" className="flex-1" disabled={isLoading}>
+                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowForgotPassword(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -9,13 +9,73 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   User, Crown, Palette, Bell, Shield, CreditCard, 
-  LogOut, Settings, Edit, CheckCircle
+  LogOut, Settings, Edit, CheckCircle, Moon, Volume, Lock
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+
+const CURRENCIES = [
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+  { code: 'KRW', symbol: '₩', name: 'South Korean Won' },
+  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+  { code: 'MXN', symbol: '$', name: 'Mexican Peso' },
+  { code: 'ZAR', symbol: 'R', name: 'South African Rand' }
+];
+
+const COUNTRIES = [
+  { code: 'global', name: 'Global' },
+  { code: 'us', name: 'United States' },
+  { code: 'gb', name: 'United Kingdom' },
+  { code: 'ca', name: 'Canada' },
+  { code: 'au', name: 'Australia' },
+  { code: 'de', name: 'Germany' },
+  { code: 'fr', name: 'France' },
+  { code: 'jp', name: 'Japan' },
+  { code: 'kr', name: 'South Korea' },
+  { code: 'in', name: 'India' },
+  { code: 'br', name: 'Brazil' },
+  { code: 'mx', name: 'Mexico' },
+  { code: 'cn', name: 'China' },
+  { code: 'it', name: 'Italy' },
+  { code: 'es', name: 'Spain' },
+  { code: 'nl', name: 'Netherlands' },
+  { code: 'se', name: 'Sweden' },
+  { code: 'no', name: 'Norway' },
+  { code: 'dk', name: 'Denmark' },
+  { code: 'fi', name: 'Finland' },
+  { code: 'pl', name: 'Poland' },
+  { code: 'ru', name: 'Russia' },
+  { code: 'za', name: 'South Africa' },
+  { code: 'eg', name: 'Egypt' },
+  { code: 'ng', name: 'Nigeria' },
+  { code: 'ke', name: 'Kenya' },
+  { code: 'ma', name: 'Morocco' },
+  { code: 'th', name: 'Thailand' },
+  { code: 'id', name: 'Indonesia' },
+  { code: 'my', name: 'Malaysia' },
+  { code: 'sg', name: 'Singapore' },
+  { code: 'ph', name: 'Philippines' },
+  { code: 'vn', name: 'Vietnam' },
+  { code: 'nz', name: 'New Zealand' },
+  { code: 'ar', name: 'Argentina' },
+  { code: 'cl', name: 'Chile' },
+  { code: 'co', name: 'Colombia' },
+  { code: 'pe', name: 'Peru' },
+  { code: 'tr', name: 'Turkey' },
+  { code: 'sa', name: 'Saudi Arabia' },
+  { code: 'ae', name: 'United Arab Emirates' },
+  { code: 'il', name: 'Israel' }
+];
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -163,43 +223,31 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="p-4 space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold gradient-text">Profile</h1>
-          <p className="text-muted-foreground">Manage your account and preferences</p>
-        </div>
-
-        {/* User Info Card */}
-        <Card>
+      <div className="p-4 space-y-4">
+        {/* User Info Header */}
+        <Card className="border-none bg-card/50">
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-8 w-8 text-primary" />
+              <div className="h-16 w-16 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <User className="h-8 w-8 text-purple-400" />
               </div>
               <div className="flex-1">
-                <h2 className={`text-xl font-bold ${getUsernameColor(userProfile?.subscription_type || 'free')}`}>
-                  {userProfile?.username || 'Anonymous User'}
+                <div className="flex items-center space-x-2">
+                  <h2 className={`text-xl font-bold ${getUsernameColor(userProfile?.subscription_type || 'free')}`}>
+                    {userProfile?.username || 'blkfax1'}
+                  </h2>
                   {userProfile?.subscription_type !== 'free' && (
-                    <Crown className="inline h-5 w-5 ml-2 text-yellow-400" />
+                    <Crown className="h-5 w-5 text-yellow-400" />
                   )}
-                  {userProfile?.is_verified && (
-                    <CheckCircle className="inline h-5 w-5 ml-1 text-blue-400" />
-                  )}
-                </h2>
-                <p className="text-muted-foreground">{user.email}</p>
+                </div>
+                <p className="text-muted-foreground text-sm">{user.email}</p>
                 <div className="flex items-center space-x-2 mt-2">
-                  <Badge 
-                    variant={userProfile?.subscription_type === 'free' ? 'secondary' : 'default'}
-                    className={userProfile?.subscription_type !== 'free' ? getSubscriptionBadge(userProfile?.subscription_type) : ''}
-                  >
-                    {userProfile?.subscription_type || 'Free'}
+                  <Badge variant="secondary" className="bg-gray-500 text-white">
+                    year
                   </Badge>
-                  {userProfile?.gender && (
-                    <Badge variant="outline">
-                      {userProfile.gender}
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="border-gray-500">
+                    {userProfile?.gender || 'male'}
+                  </Badge>
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={() => setEditing(!editing)}>
@@ -209,9 +257,97 @@ const Profile = () => {
           </CardContent>
         </Card>
 
-        {/* Edit Profile Form */}
+        {/* Active Subscription */}
+        <Card className="border-none bg-card/50">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center space-x-2">
+              <Crown className="h-5 w-5 text-yellow-400" />
+              <span className="text-lg font-semibold">Active Subscription</span>
+            </div>
+            <p className="text-muted-foreground text-sm">Your premium features are active</p>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span>Plan</span>
+                <Badge variant="secondary" className="bg-gray-500 text-white">
+                  {subscription?.plan_type || 'year'}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Expires</span>
+                <span className="text-muted-foreground">
+                  {subscription ? new Date(subscription.expires_at).toLocaleDateString() : '7/21/2026'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Amount</span>
+                <span className="font-medium">
+                  {subscription ? 
+                    `${CURRENCIES.find(c => c.code === subscription.currency)?.symbol || '$'}${subscription.amount}` : 
+                    '₹2499'
+                  }
+                </span>
+              </div>
+              <Button variant="outline" className="w-full bg-transparent border-gray-600">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Manage Subscription
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Settings */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Settings</h2>
+          
+          <Card className="border-none bg-card/50">
+            <CardContent className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Bell className="h-5 w-5 text-muted-foreground" />
+                  <span>Push Notifications</span>
+                </div>
+                <Switch />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Lock className="h-5 w-5 text-muted-foreground" />
+                  <span>Privacy Mode</span>
+                </div>
+                <Switch defaultChecked className="data-[state=checked]:bg-purple-500" />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Moon className="h-5 w-5 text-muted-foreground" />
+                  <span>Dark Theme</span>
+                </div>
+                <Switch defaultChecked className="data-[state=checked]:bg-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Account Settings Button */}
+        <Button variant="outline" className="w-full justify-start bg-purple-500 hover:bg-purple-600 text-white border-none">
+          <Settings className="h-4 w-4 mr-2" />
+          Account Settings
+        </Button>
+
+        {/* Sign Out Button */}
+        <Button 
+          variant="outline" 
+          className="w-full justify-start text-red-400 hover:text-red-300 border-gray-600 bg-transparent"
+          onClick={handleSignOut}
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign Out
+        </Button>
+
+        {/* Edit Profile Modal */}
         {editing && (
-          <Card>
+          <Card className="border-none bg-card/50">
             <CardHeader>
               <CardTitle>Edit Profile</CardTitle>
             </CardHeader>
@@ -242,32 +378,17 @@ const Profile = () => {
               </div>
 
               <div>
-                <Label htmlFor="theme">Theme</Label>
-                <Select value={formData.theme_preference} onValueChange={(value) => setFormData({ ...formData, theme_preference: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select theme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="neon">Neon</SelectItem>
-                    <SelectItem value="minimalist">Minimalist</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
                 <Label htmlFor="country">Country</Label>
                 <Select value={formData.country} onValueChange={(value) => setFormData({ ...formData, country: value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="global">Global</SelectItem>
-                    <SelectItem value="india">India</SelectItem>
-                    <SelectItem value="usa">USA</SelectItem>
-                    <SelectItem value="uk">UK</SelectItem>
-                    <SelectItem value="canada">Canada</SelectItem>
-                    <SelectItem value="australia">Australia</SelectItem>
+                  <SelectContent className="max-h-60">
+                    {COUNTRIES.map((country) => (
+                      <SelectItem key={country.code} value={country.code}>
+                        {country.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -283,135 +404,6 @@ const Profile = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* Subscription Card */}
-        {subscription ? (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Crown className="h-5 w-5 text-yellow-400" />
-                <span>Active Subscription</span>
-              </CardTitle>
-              <CardDescription>
-                Your premium features are active
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span>Plan</span>
-                <Badge className={getSubscriptionBadge(subscription.plan_type)}>
-                  {subscription.plan_type}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Expires</span>
-                <span className="text-sm text-muted-foreground">
-                  {new Date(subscription.expires_at).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Amount</span>
-                <span className="font-medium">
-                  {subscription.currency === 'INR' ? '₹' : '$'}{subscription.amount}
-                </span>
-              </div>
-              <Link to="/subscription">
-                <Button variant="outline" className="w-full">
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Manage Subscription
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Crown className="h-5 w-5 text-yellow-400" />
-                <span>Upgrade to Premium</span>
-              </CardTitle>
-              <CardDescription>
-                Unlock exclusive features and remove ads
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-400" />
-                  <span className="text-sm">Chat with specific genders</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-400" />
-                  <span className="text-sm">Premium themes</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-400" />
-                  <span className="text-sm">No advertisements</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-400" />
-                  <span className="text-sm">Colored username</span>
-                </div>
-              </div>
-              <Link to="/subscription">
-                <Button className="w-full">
-                  <Crown className="h-4 w-4 mr-2" />
-                  View Plans
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Settings */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Settings</h2>
-          
-          <Card>
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Bell className="h-5 w-5 text-muted-foreground" />
-                  <span>Push Notifications</span>
-                </div>
-                <Switch />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Shield className="h-5 w-5 text-muted-foreground" />
-                  <span>Privacy Mode</span>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Palette className="h-5 w-5 text-muted-foreground" />
-                  <span>Dark Theme</span>
-                </div>
-                <Switch defaultChecked />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Actions */}
-        <div className="space-y-3">
-          <Button variant="outline" className="w-full justify-start">
-            <Settings className="h-4 w-4 mr-2" />
-            Account Settings
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="w-full justify-start text-destructive hover:text-destructive"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
       </div>
 
       <BottomNavigation />
