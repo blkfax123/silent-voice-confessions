@@ -21,6 +21,7 @@ export type Database = {
           is_deleted: boolean | null
           message_text: string | null
           message_type: string | null
+          reactions: Json | null
           room_id: string | null
           sender_id: string | null
           sent_at: string
@@ -31,6 +32,7 @@ export type Database = {
           is_deleted?: boolean | null
           message_text?: string | null
           message_type?: string | null
+          reactions?: Json | null
           room_id?: string | null
           sender_id?: string | null
           sent_at?: string
@@ -41,6 +43,7 @@ export type Database = {
           is_deleted?: boolean | null
           message_text?: string | null
           message_type?: string | null
+          reactions?: Json | null
           room_id?: string | null
           sender_id?: string | null
           sent_at?: string
@@ -112,6 +115,7 @@ export type Database = {
       }
       confessions: {
         Row: {
+          audio_quality: string | null
           audio_url: string | null
           category: string
           confession_type: string
@@ -121,10 +125,12 @@ export type Database = {
           is_boosted: boolean | null
           is_deleted: boolean | null
           reactions: Json | null
+          recording_duration: number | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          audio_quality?: string | null
           audio_url?: string | null
           category: string
           confession_type: string
@@ -134,10 +140,12 @@ export type Database = {
           is_boosted?: boolean | null
           is_deleted?: boolean | null
           reactions?: Json | null
+          recording_duration?: number | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          audio_quality?: string | null
           audio_url?: string | null
           category?: string
           confession_type?: string
@@ -147,8 +155,45 @@ export type Database = {
           is_boosted?: boolean | null
           is_deleted?: boolean | null
           reactions?: Json | null
+          recording_duration?: number | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      content_moderation: {
+        Row: {
+          content_id: string
+          content_type: string
+          created_at: string
+          id: string
+          moderated_at: string | null
+          moderator_id: string | null
+          reason: string
+          reported_by: string | null
+          status: string | null
+        }
+        Insert: {
+          content_id: string
+          content_type: string
+          created_at?: string
+          id?: string
+          moderated_at?: string | null
+          moderator_id?: string | null
+          reason: string
+          reported_by?: string | null
+          status?: string | null
+        }
+        Update: {
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          moderated_at?: string | null
+          moderator_id?: string | null
+          reason?: string
+          reported_by?: string | null
+          status?: string | null
         }
         Relationships: []
       }
@@ -176,6 +221,30 @@ export type Database = {
           timestamp?: string
           user_id?: string | null
           username_attempted?: string | null
+        }
+        Relationships: []
+      }
+      privacy_policies: {
+        Row: {
+          content: string
+          created_at: string
+          effective_date: string
+          id: string
+          version: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          version: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          version?: string
         }
         Relationships: []
       }
@@ -232,8 +301,33 @@ export type Database = {
           },
         ]
       }
+      user_privacy_acceptance: {
+        Row: {
+          accepted_at: string
+          id: string
+          ip_address: string | null
+          policy_version: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          ip_address?: string | null
+          policy_version: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          ip_address?: string | null
+          policy_version?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
+          audio_quality: string | null
           country: string | null
           created_at: string
           email: string | null
@@ -241,6 +335,8 @@ export type Database = {
           id: string
           is_admin: boolean | null
           is_verified: boolean | null
+          playback_speed: number | null
+          recording_duration: number | null
           subscription_expires_at: string | null
           subscription_type: string | null
           theme_preference: string | null
@@ -249,6 +345,7 @@ export type Database = {
           username_color: string | null
         }
         Insert: {
+          audio_quality?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
@@ -256,6 +353,8 @@ export type Database = {
           id?: string
           is_admin?: boolean | null
           is_verified?: boolean | null
+          playback_speed?: number | null
+          recording_duration?: number | null
           subscription_expires_at?: string | null
           subscription_type?: string | null
           theme_preference?: string | null
@@ -264,6 +363,7 @@ export type Database = {
           username_color?: string | null
         }
         Update: {
+          audio_quality?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
@@ -271,6 +371,8 @@ export type Database = {
           id?: string
           is_admin?: boolean | null
           is_verified?: boolean | null
+          playback_speed?: number | null
+          recording_duration?: number | null
           subscription_expires_at?: string | null
           subscription_type?: string | null
           theme_preference?: string | null
