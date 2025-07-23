@@ -235,20 +235,19 @@ const Chat = () => {
     setWaitingForMatch(true);
     
     try {
-      // First check for existing waiting room
-      const { data: waitingRoom, error: waitingError } = await supabase
+      // First check for existing waiting rooms
+      const { data: waitingRooms, error: waitingError } = await supabase
         .from('chat_rooms')
         .select('*')
         .eq('room_type', 'random')
         .eq('is_active', false)
         .is('user2_id', null)
         .neq('user1_id', user.id)
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .single();
+        .order('created_at', { ascending: true });
 
-      if (!waitingError && waitingRoom) {
-        // Join existing waiting room
+      if (!waitingError && waitingRooms && waitingRooms.length > 0) {
+        // Join the first available waiting room
+        const waitingRoom = waitingRooms[0];
         const { data: joinedRoom, error: joinError } = await supabase
           .from('chat_rooms')
           .update({
@@ -262,6 +261,7 @@ const Chat = () => {
         if (joinError) throw joinError;
 
         setCurrentRoom(joinedRoom);
+        setWaitingForMatch(false);
         toast({
           title: "Chat started!",
           description: "You've been connected with a stranger.",
@@ -293,6 +293,7 @@ const Chat = () => {
 
           if (!error && updatedRoom.user2_id && updatedRoom.is_active) {
             setCurrentRoom(updatedRoom);
+            setWaitingForMatch(false);
             toast({
               title: "Chat started!",
               description: "You've been connected with a stranger.",
@@ -315,12 +316,12 @@ const Chat = () => {
                 .delete()
                 .eq('id', newRoom.id);
               
+              setWaitingForMatch(false);
               toast({
                 title: "No match found",
                 description: "Try again later when more users are online.",
               });
             }
-            setWaitingForMatch(false);
           }
         }, 1000);
       }
@@ -328,6 +329,7 @@ const Chat = () => {
       fetchActiveRooms();
     } catch (error) {
       console.error('Error starting chat:', error);
+      setWaitingForMatch(false);
       toast({
         title: "Error",
         description: "Failed to start chat. Please try again.",
