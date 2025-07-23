@@ -113,6 +113,36 @@ export type Database = {
           },
         ]
       }
+      comments: {
+        Row: {
+          confession_id: string
+          content: string
+          created_at: string
+          id: string
+          is_deleted: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confession_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confession_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       confessions: {
         Row: {
           audio_quality: string | null
@@ -301,6 +331,30 @@ export type Database = {
           },
         ]
       }
+      user_comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_privacy_acceptance: {
         Row: {
           accepted_at: string
@@ -325,16 +379,43 @@ export type Database = {
         }
         Relationships: []
       }
+      user_reactions: {
+        Row: {
+          confession_id: string
+          created_at: string
+          id: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          confession_id: string
+          created_at?: string
+          id?: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          confession_id?: string
+          created_at?: string
+          id?: string
+          reaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           audio_quality: string | null
+          avatar_url: string | null
           country: string | null
           created_at: string
           email: string | null
           gender: string | null
           id: string
           is_admin: boolean | null
+          is_online: boolean | null
           is_verified: boolean | null
+          last_seen: string | null
           playback_speed: number | null
           recording_duration: number | null
           subscription_expires_at: string | null
@@ -346,13 +427,16 @@ export type Database = {
         }
         Insert: {
           audio_quality?: string | null
+          avatar_url?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
           gender?: string | null
           id?: string
           is_admin?: boolean | null
+          is_online?: boolean | null
           is_verified?: boolean | null
+          last_seen?: string | null
           playback_speed?: number | null
           recording_duration?: number | null
           subscription_expires_at?: string | null
@@ -364,13 +448,16 @@ export type Database = {
         }
         Update: {
           audio_quality?: string | null
+          avatar_url?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
           gender?: string | null
           id?: string
           is_admin?: boolean | null
+          is_online?: boolean | null
           is_verified?: boolean | null
+          last_seen?: string | null
           playback_speed?: number | null
           recording_duration?: number | null
           subscription_expires_at?: string | null

@@ -146,12 +146,11 @@ const Index = () => {
                       confession={{
                         id: confession.id,
                         category: confession.category,
-                        timestamp: new Date(confession.created_at).toLocaleString(),
-                        reactions: confession.reactions || {},
-                        hasAudio: confession.confession_type === 'voice',
+                        created_at: confession.created_at,
                         content: confession.content,
-                        audioUrl: confession.audio_url
+                        audio_url: confession.audio_url
                       }}
+                      currentUserId={user?.id}
                     />
                   </motion.div>
                 ))

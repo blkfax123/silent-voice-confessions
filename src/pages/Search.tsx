@@ -7,8 +7,10 @@ import { Search as SearchIcon, TrendingUp, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import ConfessionCard from "@/components/ConfessionCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const Search = () => {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [trendingTopics, setTrendingTopics] = useState<string[]>([
@@ -113,12 +115,11 @@ const Search = () => {
                   confession={{
                     id: confession.id,
                     category: confession.category,
-                    timestamp: new Date(confession.created_at).toLocaleString(),
-                    reactions: confession.reactions || {},
-                    hasAudio: confession.confession_type === 'voice',
+                    created_at: confession.created_at,
                     content: confession.content,
-                    audioUrl: confession.audio_url
+                    audio_url: confession.audio_url
                   }}
+                  currentUserId={user?.id}
                 />
               </motion.div>
             ))}

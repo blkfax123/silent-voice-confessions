@@ -357,7 +357,7 @@ const Chat = () => {
         .select('id')
         .eq('gender', targetGender)
         .neq('id', user.id)
-        .gt('last_seen', new Date(Date.now() - 10 * 60 * 1000).toISOString())
+        .gte('last_seen', new Date(Date.now() - 10 * 60 * 1000).toISOString())
         .limit(10);
 
       if (error) throw error;
