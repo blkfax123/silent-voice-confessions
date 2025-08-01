@@ -71,6 +71,9 @@ const Chat = () => {
 
   useEffect(() => {
     if (user) {
+      // Update user's last_seen and online status when they visit chat
+      updateUserPresence();
+      
       fetchUserProfile();
       fetchActiveRooms();
       fetchOnlineCount();
@@ -94,8 +97,12 @@ const Chat = () => {
         }
       });
 
+      // Update presence every 30 seconds
+      const presenceInterval = setInterval(updateUserPresence, 30000);
+
       return () => {
         channel.unsubscribe();
+        clearInterval(presenceInterval);
       };
     }
   }, [user]);
@@ -163,12 +170,26 @@ const Chat = () => {
     }
   };
 
+  const updateUserPresence = async () => {
+    try {
+      await supabase
+        .from('users')
+        .update({ 
+          last_seen: new Date().toISOString(),
+          is_online: true 
+        })
+        .eq('id', user.id);
+    } catch (error) {
+      console.error('Error updating user presence:', error);
+    }
+  };
+
   const fetchOnlineCount = async () => {
     try {
       const { count, error } = await supabase
         .from('users')
         .select('*', { count: 'exact', head: true })
-        .gt('last_seen', new Date(Date.now() - 5 * 60 * 1000).toISOString());
+        .gt('last_seen', new Date(Date.now() - 2 * 60 * 1000).toISOString());
       
       if (error) throw error;
       setOnlineCount(count || 0);
@@ -359,7 +380,7 @@ const Chat = () => {
         .select('id')
         .eq('gender', targetGender)
         .neq('id', user.id)
-        .gte('last_seen', new Date(Date.now() - 10 * 60 * 1000).toISOString())
+        .gt('last_seen', new Date(Date.now() - 2 * 60 * 1000).toISOString())
         .limit(10);
 
       if (error) throw error;
