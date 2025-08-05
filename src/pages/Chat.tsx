@@ -38,6 +38,7 @@ const Chat = () => {
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Core states
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -47,6 +48,7 @@ const Chat = () => {
   const [loading, setLoading] = useState(false);
   const [waitingForMatch, setWaitingForMatch] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
   
   // Chat states
   const [messageText, setMessageText] = useState("");
@@ -56,10 +58,14 @@ const Chat = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [partnerInfo, setPartnerInfo] = useState<any>(null);
+  const [chatDuration, setChatDuration] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Real-time subscriptions
   const [messagesSubscription, setMessagesSubscription] = useState<any>(null);
   const [typingSubscription, setTypingSubscription] = useState<any>(null);
+  const [roomSubscription, setRoomSubscription] = useState<any>(null);
 
   const emojis = ['😀', '😂', '😍', '🥰', '😊', '🤔', '😮', '😢', '😡', '👍', '👎', '❤️', '🔥', '⭐'];
   const reactions = [
@@ -112,6 +118,20 @@ const Chat = () => {
       fetchMessages();
       setupMessageSubscription();
       setupTypingSubscription();
+      setupRoomSubscription();
+      fetchPartnerInfo();
+      setConnectionStatus('connected');
+      
+      // Start chat duration timer
+      const startTime = Date.now();
+      const durationInterval = setInterval(() => {
+        setChatDuration(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+      
+      return () => {
+        cleanupSubscriptions();
+        clearInterval(durationInterval);
+      };
     }
     return () => {
       cleanupSubscriptions();
@@ -159,6 +179,57 @@ const Chat = () => {
     setTypingSubscription(subscription);
   };
 
+  const setupRoomSubscription = () => {
+    if (!currentRoom) return;
+    
+    const subscription = supabase
+      .channel(`room:${currentRoom.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_rooms',
+          filter: `id=eq.${currentRoom.id}`
+        },
+        (payload) => {
+          // Handle room updates (like when partner leaves)
+          if (!payload.new.is_active) {
+            setCurrentRoom(null);
+            setMessages([]);
+            setConnectionStatus('disconnected');
+            toast({
+              title: "Chat ended",
+              description: "Your partner has left the chat.",
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    setRoomSubscription(subscription);
+  };
+
+  const fetchPartnerInfo = async () => {
+    if (!currentRoom) return;
+    
+    try {
+      const partnerId = currentRoom.user1_id === user.id ? currentRoom.user2_id : currentRoom.user1_id;
+      if (!partnerId) return;
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('username, subscription_type, is_verified, gender')
+        .eq('id', partnerId)
+        .single();
+
+      if (error) throw error;
+      setPartnerInfo(data);
+    } catch (error) {
+      console.error('Error fetching partner info:', error);
+    }
+  };
+
   const cleanupSubscriptions = () => {
     if (messagesSubscription) {
       supabase.removeChannel(messagesSubscription);
@@ -167,6 +238,10 @@ const Chat = () => {
     if (typingSubscription) {
       supabase.removeChannel(typingSubscription);
       setTypingSubscription(null);
+    }
+    if (roomSubscription) {
+      supabase.removeChannel(roomSubscription);
+      setRoomSubscription(null);
     }
   };
 
@@ -464,9 +539,20 @@ const Chat = () => {
     if (!currentRoom) return;
 
     try {
+      setIsUploading(true);
       let imageUrl = null;
       
       if (selectedImage) {
+        // Validate image size (max 5MB)
+        if (selectedImage.size > 5 * 1024 * 1024) {
+          toast({
+            title: "Image too large",
+            description: "Please select an image smaller than 5MB.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         const fileExt = selectedImage.name.split('.').pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
         
@@ -516,21 +602,38 @@ const Chat = () => {
         description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const handleTyping = (value: string) => {
     setMessageText(value);
     
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Start typing if not already
     if (!isTyping && value.length > 0) {
       setIsTyping(true);
       broadcastTyping(true);
-      
-      // Stop typing after 3 seconds of inactivity
-      setTimeout(() => {
+    }
+    
+    // Stop typing if message is empty
+    if (value.length === 0 && isTyping) {
+      setIsTyping(false);
+      broadcastTyping(false);
+      return;
+    }
+    
+    // Set timeout to stop typing after 2 seconds of inactivity
+    if (value.length > 0) {
+      typingTimeoutRef.current = setTimeout(() => {
         setIsTyping(false);
         broadcastTyping(false);
-      }, 3000);
+      }, 2000);
     }
   };
 
@@ -604,34 +707,71 @@ const Chat = () => {
     return (
       <div className={`min-h-screen ${darkMode ? 'dark' : ''} bg-background pb-20`}>
         {/* Chat Header */}
-        <div className="sticky top-0 bg-background/80 backdrop-blur border-b p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm" onClick={() => setCurrentRoom(null)}>
-              ← Back
-            </Button>
-            <div>
-              <p className="font-medium">
-                {currentRoom.room_type === 'random' ? 'Random Chat' : `${currentRoom.target_gender} Chat`}
-              </p>
-              {partnerTyping && (
-                <p className="text-xs text-muted-foreground animate-pulse">
-                  Partner is typing...
-                </p>
-              )}
+        <div className="sticky top-0 bg-background/80 backdrop-blur border-b p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" size="sm" onClick={() => setCurrentRoom(null)}>
+                ← Back
+              </Button>
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  connectionStatus === 'connected' ? 'bg-green-500' : 
+                  connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
+                }`}></div>
+                <span className="text-sm text-muted-foreground">
+                  {connectionStatus === 'connected' ? 'Connected' : 
+                   connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-muted-foreground">
+                {Math.floor(chatDuration / 60)}:{(chatDuration % 60).toString().padStart(2, '0')}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDarkMode(!darkMode)}
+              >
+                {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={leaveChat}>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDarkMode(!darkMode)}
-            >
-              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={leaveChat}>
-              <X className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <p className="font-medium">
+                {currentRoom.room_type === 'random' ? 'Random Chat' : `${currentRoom.target_gender} Chat`}
+              </p>
+              {partnerInfo && (
+                <div className="flex items-center space-x-1">
+                  <Badge variant="outline" className="text-xs">
+                    {partnerInfo.gender}
+                  </Badge>
+                  {partnerInfo.is_verified && (
+                    <Badge variant="secondary" className="text-xs">Verified</Badge>
+                  )}
+                  {partnerInfo.subscription_type !== 'free' && (
+                    <Crown className="h-3 w-3 text-yellow-500" />
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {partnerTyping && (
+              <p className="text-xs text-muted-foreground animate-pulse flex items-center space-x-1">
+                <div className="flex space-x-1">
+                  <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce"></div>
+                  <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-1 h-1 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+                <span>typing...</span>
+              </p>
+            )}
           </div>
         </div>
 
@@ -679,46 +819,99 @@ const Chat = () => {
         </ScrollArea>
 
         {/* Input Area */}
-        <div className="p-4 border-t bg-background flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-          >
-            <Smile className="h-5 w-5" />
-          </Button>
-          <Input
-            value={messageText}
-            onChange={(e) => handleTyping(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-            placeholder="Type your message..."
-            className="flex-1"
-          />
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleImageSelect}
-          />
-          <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="h-5 w-5" />
-          </Button>
-          <Button onClick={sendMessage} disabled={!messageText.trim() && !selectedImage}>
-            <Send className="h-4 w-4 mr-1" /> Send
-          </Button>
-
+        <div className="p-4 border-t bg-background">
+          {/* Image Preview */}
           {imagePreview && (
-            <div className="mt-2 flex items-center space-x-2">
-              <img src={imagePreview} alt="Preview" className="w-24 h-24 rounded-md object-cover" />
-              <Button variant="ghost" onClick={() => {
-                setSelectedImage(null);
-                setImagePreview(null);
-              }}>
-                <X className="h-4 w-4 mr-1" /> Remove
+            <div className="mb-3 flex items-center space-x-2 p-2 bg-muted rounded-lg">
+              <img src={imagePreview} alt="Preview" className="w-16 h-16 rounded-md object-cover" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Image selected</p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedImage ? `${(selectedImage.size / 1024 / 1024).toFixed(2)} MB` : ''}
+                </p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setSelectedImage(null);
+                  setImagePreview(null);
+                }}
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
           )}
+
+          {/* Emoji Picker */}
+          {showEmojiPicker && (
+            <div className="mb-3 p-3 bg-muted rounded-lg">
+              <div className="grid grid-cols-7 gap-2">
+                {emojis.map((emoji, index) => (
+                  <Button
+                    key={index}
+                    variant="ghost"
+                    size="sm"
+                    className="text-lg"
+                    onClick={() => {
+                      setMessageText(prev => prev + emoji);
+                      setShowEmojiPicker(false);
+                    }}
+                  >
+                    {emoji}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Message Input */}
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <Smile className="h-5 w-5" />
+            </Button>
+            <Input
+              value={messageText}
+              onChange={(e) => handleTyping(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+              placeholder="Type your message..."
+              className="flex-1"
+              disabled={isUploading}
+            />
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImageSelect}
+            />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              <Upload className="h-5 w-5" />
+            </Button>
+            <Button 
+              onClick={sendMessage} 
+              disabled={(!messageText.trim() && !selectedImage) || isUploading}
+              className="min-w-[80px]"
+            >
+              {isUploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-1" />
+                  Send
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     );

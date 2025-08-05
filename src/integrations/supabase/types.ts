@@ -510,6 +510,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_inactive_chat_rooms: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_chat_messages: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       has_active_subscription: {
         Args: { user_uuid: string }
         Returns: boolean
