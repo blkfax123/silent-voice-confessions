@@ -256,96 +256,112 @@ const Chat = () => {
     setWaitingForMatch(true);
     
     try {
-      // First check for existing waiting rooms
-      const { data: waitingRooms, error: waitingError } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .eq('room_type', 'random')
-        .eq('is_active', false)
-        .is('user2_id', null)
-        .neq('user1_id', user.id)
-        .order('created_at', { ascending: true });
-
-      if (!waitingError && waitingRooms && waitingRooms.length > 0) {
-        // Join the first available waiting room
-        const waitingRoom = waitingRooms[0];
-        const { data: joinedRoom, error: joinError } = await supabase
+      // Use a transaction-like approach to handle race conditions
+      // First try to join an existing waiting room
+      let matchFound = false;
+      
+      for (let attempt = 0; attempt < 3 && !matchFound; attempt++) {
+        const { data: waitingRooms, error: waitingError } = await supabase
           .from('chat_rooms')
-          .update({
-            user2_id: user.id,
-            is_active: true
-          })
-          .eq('id', waitingRoom.id)
-          .select()
-          .single();
+          .select('*')
+          .eq('room_type', 'random')
+          .eq('is_active', false)
+          .is('user2_id', null)
+          .neq('user1_id', user.id)
+          .order('created_at', { ascending: true })
+          .limit(1);
 
-        if (joinError) throw joinError;
-
-        setCurrentRoom(joinedRoom);
-        setWaitingForMatch(false);
-        toast({
-          title: "Chat started!",
-          description: "You've been connected with a stranger.",
-        });
-      } else {
-        // Create new waiting room
-        const { data: newRoom, error: roomError } = await supabase
-          .from('chat_rooms')
-          .insert({
-            user1_id: user.id,
-            room_type: 'random',
-            is_active: false
-          })
-          .select()
-          .single();
-
-        if (roomError) throw roomError;
-
-        // Wait for someone to join
-        let attempts = 0;
-        const maxAttempts = 30; // 30 seconds
-        
-        const checkForPartner = async () => {
-          const { data: updatedRoom, error } = await supabase
+        if (!waitingError && waitingRooms && waitingRooms.length > 0) {
+          const waitingRoom = waitingRooms[0];
+          
+          // Try to join this room
+          const { data: joinedRoom, error: joinError } = await supabase
             .from('chat_rooms')
-            .select('*')
-            .eq('id', newRoom.id)
-            .single();
+            .update({
+              user2_id: user.id,
+              is_active: true
+            })
+            .eq('id', waitingRoom.id)
+            .eq('user2_id', null) // Only update if still available
+            .select()
+            .maybeSingle();
 
-          if (!error && updatedRoom.user2_id && updatedRoom.is_active) {
-            setCurrentRoom(updatedRoom);
+          // If we successfully joined, we're done
+          if (!joinError && joinedRoom) {
+            setCurrentRoom(joinedRoom);
             setWaitingForMatch(false);
+            setLoading(false);
             toast({
               title: "Chat started!",
               description: "You've been connected with a stranger.",
             });
-            return true;
+            return;
           }
-          return false;
-        };
-
-        const waitInterval = setInterval(async () => {
-          attempts++;
-          const found = await checkForPartner();
-          
-          if (found || attempts >= maxAttempts) {
-            clearInterval(waitInterval);
-            if (!found) {
-              // Clean up waiting room if no match
-              await supabase
-                .from('chat_rooms')
-                .delete()
-                .eq('id', newRoom.id);
-              
-              setWaitingForMatch(false);
-              toast({
-                title: "No match found",
-                description: "Try again later when more users are online.",
-              });
-            }
-          }
-        }, 1000);
+        }
+        
+        // Wait a bit before retrying
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
+
+      // If no existing room found, create new waiting room
+      const { data: newRoom, error: roomError } = await supabase
+        .from('chat_rooms')
+        .insert({
+          user1_id: user.id,
+          room_type: 'random',
+          is_active: false
+        })
+        .select()
+        .single();
+
+      if (roomError) throw roomError;
+
+      // Wait for someone to join
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds
+      
+      const checkForPartner = async () => {
+        const { data: updatedRoom, error } = await supabase
+          .from('chat_rooms')
+          .select('*')
+          .eq('id', newRoom.id)
+          .single();
+
+        if (!error && updatedRoom.user2_id && updatedRoom.is_active) {
+          setCurrentRoom(updatedRoom);
+          setWaitingForMatch(false);
+          toast({
+            title: "Chat started!",
+            description: "You've been connected with a stranger.",
+          });
+          return true;
+        }
+        return false;
+      };
+
+      const waitInterval = setInterval(async () => {
+        attempts++;
+        const found = await checkForPartner();
+        
+        if (found || attempts >= maxAttempts) {
+          clearInterval(waitInterval);
+          if (!found) {
+            // Clean up waiting room if no match
+            await supabase
+              .from('chat_rooms')
+              .delete()
+              .eq('id', newRoom.id);
+            
+            setWaitingForMatch(false);
+            toast({
+              title: "No match found", 
+              description: "Try again later when more users are online.",
+            });
+          }
+        }
+      }, 1000);
 
       fetchActiveRooms();
     } catch (error) {
