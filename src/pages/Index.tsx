@@ -24,17 +24,23 @@ const Index = () => {
     fetchConfessions();
     if (user) {
       checkUserProfile();
-    }
-    
-    // Simulate online count
-    const updateOnlineCount = () => {
+      fetchRealOnlineCount();
+    } else {
+      // Simulate online count for non-authenticated users
       const baseCount = 45;
       const variation = Math.floor(Math.random() * 20) - 10;
       setOnlineCount(baseCount + variation);
-    };
+    }
     
-    updateOnlineCount();
-    const interval = setInterval(updateOnlineCount, 30000); // Update every 30 seconds
+    const interval = setInterval(() => {
+      if (user) {
+        fetchRealOnlineCount();
+      } else {
+        const baseCount = 45;
+        const variation = Math.floor(Math.random() * 20) - 10;
+        setOnlineCount(baseCount + variation);
+      }
+    }, 30000);
     
     return () => clearInterval(interval);
   }, [user]);
@@ -77,6 +83,24 @@ const Index = () => {
     }
   };
 
+  const fetchRealOnlineCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .gt('last_seen', new Date(Date.now() - 2 * 60 * 1000).toISOString());
+      
+      if (error) throw error;
+      setOnlineCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching online count:', error);
+      // Fallback to simulated count
+      const baseCount = 45;
+      const variation = Math.floor(Math.random() * 20) - 10;
+      setOnlineCount(baseCount + variation);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
   };
@@ -96,11 +120,25 @@ const Index = () => {
           </div>
           <h1 className="text-2xl font-bold text-foreground">Silent Circle</h1>
         </div>
-        <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-md border">
-          <div className="w-3 h-3 rounded-full bg-primary"></div>
-          <span className="text-sm text-foreground font-medium">
-            {userProfile?.username || 'Anonymous'}
-          </span>
+        <div className="flex items-center space-x-2">
+          <div className="px-3 py-1 rounded-full bg-card/50 backdrop-blur-md border">
+            <span className="text-xs text-muted-foreground">
+              {onlineCount} online
+            </span>
+          </div>
+          {user && (
+            <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-card/50 backdrop-blur-md border">
+              <div className="w-3 h-3 rounded-full bg-primary"></div>
+              <span className="text-sm text-foreground font-medium">
+                {userProfile?.username || 'Anonymous'}
+              </span>
+            </div>
+          )}
+          {!user && (
+            <Link to="/auth">
+              <Button size="sm" variant="outline">Sign In</Button>
+            </Link>
+          )}
         </div>
       </header>
 

@@ -22,21 +22,39 @@ const RecordButton = () => {
 
   const categories = ["Love", "Guilt", "Career", "Dreams", "Random"];
 
-  const startRecording = () => {
-    setIsRecording(true);
-    setRecordingTime(0);
-    
-    // Simulate recording timer
-    const timer = setInterval(() => {
-      setRecordingTime(prev => {
-        if (prev >= 60) {
-          stopRecording();
-          clearInterval(timer);
-          return 60;
-        }
-        return prev + 1;
+  const startRecording = async () => {
+    try {
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Start recording timer
+      const timer = setInterval(() => {
+        setRecordingTime(prev => {
+          if (prev >= 60) {
+            stopRecording();
+            clearInterval(timer);
+            return 60;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+      
+      // TODO: Implement actual recording with MediaRecorder API
+      // For now, we'll simulate the recording
+      
+      // Stop all tracks to release microphone
+      stream.getTracks().forEach(track => track.stop());
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      toast({
+        title: "Microphone access denied",
+        description: "Please allow microphone access to record audio confessions.",
+        variant: "destructive"
       });
-    }, 1000);
+    }
   };
 
   const stopRecording = () => {
