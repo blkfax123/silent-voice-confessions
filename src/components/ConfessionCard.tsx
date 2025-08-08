@@ -53,13 +53,11 @@ const ConfessionCard = ({ confession, currentUserId }: ConfessionCardProps) => {
                 ? `${confession.content.slice(0, 220)}…`
                 : confession.content}
             </p>
-            {confession.content && confession.content.length > 220 && (
-              <div className="mt-3">
-                <Link to={`/confession/${confession.id}`}>
-                  <Button variant="secondary" size="sm">Read post</Button>
-                </Link>
-              </div>
-            )}
+            <div className="mt-3">
+              <Link to={`/confession/${confession.id}`}>
+                <Button variant="secondary" size="sm">Read post</Button>
+              </Link>
+            </div>
           </div>
         )}
       </div>

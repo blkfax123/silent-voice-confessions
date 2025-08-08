@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ConfessionReactions } from "@/components/ConfessionReactions";
 import { CommentsSection } from "@/components/CommentsSection";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Languages } from "lucide-react";
 
 interface Confession {
   id: string;
@@ -18,6 +20,9 @@ const ConfessionDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [confession, setConfession] = useState<Confession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedLang, setSelectedLang] = useState<string>('en');
+  const [translating, setTranslating] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchConfession = async () => {
@@ -110,6 +115,41 @@ const ConfessionDetail = () => {
               <span>•</span>
               <time dateTime={confession.created_at}>{new Date(confession.created_at).toLocaleDateString()}</time>
             </div>
+            {!confession.audio_url && (
+              <div className="mt-4 flex items-center gap-2">
+                <Languages className="w-4 h-4 text-muted-foreground" />
+                <Select value={selectedLang} onValueChange={(v) => setSelectedLang(v)}>
+                  <SelectTrigger className="w-44"><SelectValue placeholder="Language" /></SelectTrigger>
+                  <SelectContent className="z-50 bg-card">
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="hi">Hindi</SelectItem>
+                    <SelectItem value="ja">Japanese</SelectItem>
+                    <SelectItem value="id">Indonesian</SelectItem>
+                    <SelectItem value="fr">French</SelectItem>
+                    <SelectItem value="de">German</SelectItem>
+                    <SelectItem value="sv">Swedish</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" disabled={translating} onClick={async () => {
+                  if (!confession.content) return;
+                  try {
+                    setTranslating(true);
+                    const { data, error } = await supabase.functions.invoke('translate', {
+                      body: { text: confession.content, target: selectedLang }
+                    });
+                    if (error) throw error;
+                    setTranslatedText((data as any)?.translatedText || (data as any)?.translated_text || '');
+                  } catch (e) {
+                    console.error('Translation failed', e);
+                  } finally {
+                    setTranslating(false);
+                  }
+                }}>{translating ? 'Translating…' : 'Translate'}</Button>
+                {translatedText && (
+                  <Button size="sm" variant="ghost" onClick={() => setTranslatedText(null)}>Show original</Button>
+                )}
+              </div>
+            )}
           </header>
 
           <div className="p-6 space-y-4">
@@ -117,7 +157,7 @@ const ConfessionDetail = () => {
               <audio controls className="w-full h-10" src={confession.audio_url} />
             ) : (
               <div className="prose prose-invert max-w-none">
-                <p className="whitespace-pre-wrap text-base leading-7">{confession.content}</p>
+                <p className="whitespace-pre-wrap text-base leading-7">{translatedText ?? confession.content}</p>
               </div>
             )}
           </div>

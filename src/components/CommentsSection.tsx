@@ -115,7 +115,7 @@ export const CommentsSection = ({ confessionId, currentUserId }: CommentsSection
     try {
       const { error } = await supabase
         .from('comments')
-        .update({ is_deleted: true })
+        .delete()
         .eq('id', commentId)
         .eq('user_id', currentUserId);
 
