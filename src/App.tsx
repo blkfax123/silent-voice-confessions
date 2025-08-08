@@ -10,6 +10,7 @@ import Search from "./pages/Search";
 import Chat from "./pages/Chat";
 import Post from "./pages/Post";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import Subscription from "./pages/Subscription";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/post" element={<ProtectedRoute><Post /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />

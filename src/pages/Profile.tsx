@@ -252,9 +252,11 @@ const Profile = () => {
                   </Badge>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setEditing(!editing)}>
-                <Edit className="h-4 w-4" />
-              </Button>
+              <Link to="/profile/edit">
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
@@ -347,82 +349,6 @@ const Profile = () => {
           Sign Out
         </Button>
 
-        {/* Edit Profile Modal */}
-        {editing && (
-          <Card className="border-none bg-card/50">
-            <CardHeader>
-              <CardTitle>Edit Profile</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  placeholder="Enter username"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="gender">Gender</Label>
-                <Select value={formData.gender} onValueChange={(value) => setFormData({ ...formData, gender: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                    <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="country">Country</Label>
-                <Select value={formData.country} onValueChange={(value) => setFormData({ ...formData, country: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {COUNTRIES.map((country) => (
-                      <SelectItem key={country.code} value={country.code}>
-                        {country.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="language">Language</Label>
-                <Select value={formData.language_preference} onValueChange={(value) => setFormData({ ...formData, language_preference: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent className="z-50 bg-card">
-                    <SelectItem value="english">English</SelectItem>
-                    <SelectItem value="hindi">Hindi</SelectItem>
-                    <SelectItem value="japanese">Japanese</SelectItem>
-                    <SelectItem value="indonesian">Indonesian</SelectItem>
-                    <SelectItem value="french">French</SelectItem>
-                    <SelectItem value="german">German</SelectItem>
-                    <SelectItem value="swedish">Swedish</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button onClick={updateProfile} disabled={updating} className="flex-1">
-                  {updating ? "Saving..." : "Save Changes"}
-                </Button>
-                <Button variant="outline" onClick={() => setEditing(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
 
       <BottomNavigation />
