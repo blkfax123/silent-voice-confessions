@@ -15,6 +15,7 @@ import Auth from "./pages/Auth";
 import Subscription from "./pages/Subscription";
 import Verify from "./pages/Verify";
 import NotFound from "./pages/NotFound";
+import ConfessionDetail from "./pages/Confession";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/verify" element={<Verify />} />
+            <Route path="/confession/:id" element={<ConfessionDetail />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

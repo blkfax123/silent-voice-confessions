@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Play, Heart, Laugh, Frown, Zap } from "lucide-react";
 import { ConfessionReactions } from './ConfessionReactions';
@@ -47,7 +48,18 @@ const ConfessionCard = ({ confession, currentUserId }: ConfessionCardProps) => {
           </div>
         ) : (
           <div className="bg-muted/50 rounded-lg p-3">
-            <p className="text-sm leading-relaxed">{confession.content}</p>
+            <p className="text-sm leading-relaxed">
+              {confession.content && confession.content.length > 220
+                ? `${confession.content.slice(0, 220)}…`
+                : confession.content}
+            </p>
+            {confession.content && confession.content.length > 220 && (
+              <div className="mt-3">
+                <Link to={`/confession/${confession.id}`}>
+                  <Button variant="secondary" size="sm">Read post</Button>
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>
