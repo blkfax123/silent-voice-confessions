@@ -89,7 +89,8 @@ const Profile = () => {
     username: "",
     gender: "",
     theme_preference: "",
-    country: ""
+    country: "",
+    language_preference: "english",
   });
 
   useEffect(() => {
@@ -113,7 +114,8 @@ const Profile = () => {
         username: profile.username || "",
         gender: profile.gender || "",
         theme_preference: profile.theme_preference || "dark",
-        country: profile.country || "global"
+        country: profile.country || "global",
+        language_preference: profile.language_preference || "english",
       });
 
       // Fetch active subscription
@@ -389,6 +391,23 @@ const Profile = () => {
                         {country.name}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="language">Language</Label>
+                <Select value={formData.language_preference} onValueChange={(value) => setFormData({ ...formData, language_preference: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-card">
+                    <SelectItem value="english">English</SelectItem>
+                    <SelectItem value="hindi">Hindi</SelectItem>
+                    <SelectItem value="japanese">Japanese</SelectItem>
+                    <SelectItem value="indonesian">Indonesian</SelectItem>
+                    <SelectItem value="french">French</SelectItem>
+                    <SelectItem value="german">German</SelectItem>
+                    <SelectItem value="swedish">Swedish</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

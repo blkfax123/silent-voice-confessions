@@ -415,6 +415,7 @@ export type Database = {
           is_admin: boolean | null
           is_online: boolean | null
           is_verified: boolean | null
+          language_preference: string | null
           last_seen: string | null
           playback_speed: number | null
           recording_duration: number | null
@@ -436,6 +437,7 @@ export type Database = {
           is_admin?: boolean | null
           is_online?: boolean | null
           is_verified?: boolean | null
+          language_preference?: string | null
           last_seen?: string | null
           playback_speed?: number | null
           recording_duration?: number | null
@@ -457,6 +459,7 @@ export type Database = {
           is_admin?: boolean | null
           is_online?: boolean | null
           is_verified?: boolean | null
+          language_preference?: string | null
           last_seen?: string | null
           playback_speed?: number | null
           recording_duration?: number | null
