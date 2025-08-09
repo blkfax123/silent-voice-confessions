@@ -2,10 +2,12 @@ import { useState } from "react";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Mic, Type, Send, Heart } from "lucide-react";
+import { Mic, Type, Send, CircleHelp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import RecordButton from "@/components/RecordButton";
@@ -18,6 +20,7 @@ const Post = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [postType, setPostType] = useState<'text' | 'voice'>('text');
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,6 +51,7 @@ const Post = () => {
         .from('confessions')
         .insert({
           user_id: user.id,
+          title: title.trim() || null,
           content: content.trim(),
           category,
           confession_type: 'text'
@@ -159,14 +163,28 @@ const Post = () => {
                     </Select>
                   </div>
 
+                  {/* Title (Optional) */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Title (optional)</label>
+                    <Input
+                      placeholder="Give your confession a title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value.slice(0, 60))}
+                      maxLength={60}
+                      className="bg-muted/50"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">{title.length}/60</p>
+                  </div>
+
                   {/* Text Area */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">Your Confession</label>
                     <Textarea
                       placeholder="Share what's on your mind... (your identity remains completely anonymous)"
                       value={content}
-                      onChange={(e) => setContent(e.target.value)}
+                      onChange={(e) => setContent(e.target.value.slice(0, 500))}
                       rows={6}
+                      maxLength={500}
                       className="resize-none"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
@@ -174,15 +192,33 @@ const Post = () => {
                     </p>
                   </div>
 
-                  {/* Submit Button */}
-                  <Button
-                    onClick={handleTextPost}
-                    disabled={loading || !content.trim() || !category}
-                    className="w-full"
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    {loading ? "Posting..." : "Share Anonymously"}
-                  </Button>
+                  {/* Submit & Info */}
+                  <div className="flex items-center justify-between gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button type="button" variant="ghost" size="icon" aria-label="Anonymity info">
+                          <CircleHelp className="h-5 w-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          Complete Anonymity: Your identity is never revealed. All confessions are posted
+                          anonymously to create a safe space for authentic sharing.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+
+                    <motion.div whileTap={{ scale: 0.98 }} className="flex-1">
+                      <Button
+                        onClick={handleTextPost}
+                        disabled={loading || !content.trim() || !category}
+                        className="w-full"
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        {loading ? "Posting..." : "Share Anonymously"}
+                      </Button>
+                    </motion.div>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
@@ -251,21 +287,6 @@ const Post = () => {
           )}
         </AnimatePresence>
 
-        {/* Anonymous Notice */}
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-3">
-              <Heart className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <h3 className="font-medium text-primary">Complete Anonymity</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Your identity is never revealed. All confessions are posted anonymously 
-                  to create a safe space for authentic sharing.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Voice Recording Button (only for voice posts and when user is logged in) */}

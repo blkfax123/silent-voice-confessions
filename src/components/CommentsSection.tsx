@@ -6,6 +6,16 @@ import { MessageCircle, Send, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Comment {
   id: string;
@@ -27,6 +37,8 @@ export const CommentsSection = ({ confessionId, currentUserId }: CommentsSection
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -185,7 +197,7 @@ export const CommentsSection = ({ confessionId, currentUserId }: CommentsSection
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteComment(comment.id)}
+                        onClick={() => { setDeleteId(comment.id); setConfirmOpen(true); }}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
@@ -198,6 +210,23 @@ export const CommentsSection = ({ confessionId, currentUserId }: CommentsSection
           </div>
         </div>
       )}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete comment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. Your comment will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deleteId) handleDeleteComment(deleteId); setConfirmOpen(false); setDeleteId(null); }}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

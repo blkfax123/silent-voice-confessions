@@ -82,6 +82,7 @@ const Profile = () => {
   const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [confessions, setConfessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -130,6 +131,15 @@ const Profile = () => {
       if (!subError && sub) {
         setSubscription(sub);
       }
+
+      // Fetch user's posts
+      const { data: myConfs } = await supabase
+        .from('confessions')
+        .select('id, title, content, audio_url')
+        .eq('user_id', user?.id)
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false });
+      setConfessions(myConfs || []);
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -252,11 +262,18 @@ const Profile = () => {
                   </Badge>
                 </div>
               </div>
-              <Link to="/profile/edit">
-                <Button variant="outline" size="sm">
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </Link>
+              <div className="flex gap-2">
+                <Link to="/settings">
+                  <Button variant="outline" size="sm" aria-label="Settings">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to="/profile/edit">
+                  <Button variant="outline" size="sm" aria-label="Edit profile">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -300,6 +317,28 @@ const Profile = () => {
           </CardContent>
         </Card>
 
+        {/* Your Posts */}
+        <Card className="border-none bg-card/50">
+          <CardContent className="p-4">
+            <h2 className="text-lg font-semibold mb-3">Your Posts</h2>
+            {confessions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">You haven't posted anything yet.</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {confessions.map((c) => (
+                  <Link key={c.id} to={`/confession/${c.id}`} className="block">
+                    <div className="aspect-square rounded-md bg-muted flex items-center justify-center p-2 hover-scale">
+                      <span className="text-xs line-clamp-4 text-center">
+                        {c.title || c.content || 'Voice confession'}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Settings */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Settings</h2>
@@ -334,10 +373,12 @@ const Profile = () => {
         </div>
 
         {/* Account Settings Button */}
-        <Button variant="outline" className="w-full justify-start bg-purple-500 hover:bg-purple-600 text-white border-none">
-          <Settings className="h-4 w-4 mr-2" />
-          Account Settings
-        </Button>
+        <Link to="/settings">
+          <Button variant="outline" className="w-full justify-start">
+            <Settings className="h-4 w-4 mr-2" />
+            Account Settings
+          </Button>
+        </Link>
 
         {/* Sign Out Button */}
         <Button 

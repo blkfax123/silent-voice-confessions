@@ -17,7 +17,8 @@ import Subscription from "./pages/Subscription";
 import Verify from "./pages/Verify";
 import NotFound from "./pages/NotFound";
 import ConfessionDetail from "./pages/Confession";
-
+import Settings from "./pages/Settings";
+import AuthCallback from "./pages/AuthCallback";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -39,6 +40,8 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/verify" element={<Verify />} />
             <Route path="/confession/:id" element={<ConfessionDetail />} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

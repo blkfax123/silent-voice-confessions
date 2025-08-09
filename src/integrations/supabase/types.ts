@@ -156,6 +156,7 @@ export type Database = {
           is_deleted: boolean | null
           reactions: Json | null
           recording_duration: number | null
+          title: string | null
           updated_at: string
           user_id: string | null
         }
@@ -171,6 +172,7 @@ export type Database = {
           is_deleted?: boolean | null
           reactions?: Json | null
           recording_duration?: number | null
+          title?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -186,6 +188,7 @@ export type Database = {
           is_deleted?: boolean | null
           reactions?: Json | null
           recording_duration?: number | null
+          title?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -418,6 +421,8 @@ export type Database = {
           language_preference: string | null
           last_seen: string | null
           playback_speed: number | null
+          privacy_mode: boolean | null
+          push_notifications_enabled: boolean | null
           recording_duration: number | null
           subscription_expires_at: string | null
           subscription_type: string | null
@@ -440,6 +445,8 @@ export type Database = {
           language_preference?: string | null
           last_seen?: string | null
           playback_speed?: number | null
+          privacy_mode?: boolean | null
+          push_notifications_enabled?: boolean | null
           recording_duration?: number | null
           subscription_expires_at?: string | null
           subscription_type?: string | null
@@ -462,6 +469,8 @@ export type Database = {
           language_preference?: string | null
           last_seen?: string | null
           playback_speed?: number | null
+          privacy_mode?: boolean | null
+          push_notifications_enabled?: boolean | null
           recording_duration?: number | null
           subscription_expires_at?: string | null
           subscription_type?: string | null
