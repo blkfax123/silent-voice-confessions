@@ -157,7 +157,7 @@ const Index = () => {
               className="flex items-center space-x-2 data-[state=active]:bg-primary/20 data-[state=active]:text-foreground rounded-lg"
             >
               <Radio className="h-4 w-4" />
-              <span>Chat</span>
+              <span>Listen</span>
             </TabsTrigger>
           </TabsList>
 
@@ -228,10 +228,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="whisper" className="space-y-4">
-            <div className="p-6 rounded-lg border bg-card/50 text-center space-y-3">
-              <p className="text-muted-foreground">Open the chat in a dedicated page.</p>
-              <Link to="/chat"><Button>Go to Chat</Button></Link>
-            </div>
+            <WhisperRoom />
           </TabsContent>
         </Tabs>
       </main>

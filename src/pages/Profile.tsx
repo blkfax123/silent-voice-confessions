@@ -83,6 +83,9 @@ const Profile = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [confessions, setConfessions] = useState<any[]>([]);
+  const [likesCount, setLikesCount] = useState(0);
+  const [savedCount, setSavedCount] = useState(0);
+  const [viewsCount, setViewsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -135,11 +138,25 @@ const Profile = () => {
       // Fetch user's posts
       const { data: myConfs } = await supabase
         .from('confessions')
-        .select('id, title, content, audio_url')
+        .select('id, title, content, audio_url, category')
         .eq('user_id', user?.id)
         .eq('is_deleted', false)
         .order('created_at', { ascending: false });
       setConfessions(myConfs || []);
+
+      // Basic stats (placeholder views and computed likes)
+      setViewsCount((myConfs?.length || 0) * 10);
+      if (myConfs && myConfs.length > 0) {
+        const ids = myConfs.map((c: any) => c.id);
+        const { count } = await supabase
+          .from('user_reactions')
+          .select('*', { count: 'exact', head: true })
+          .in('confession_id', ids);
+        setLikesCount(count || 0);
+      } else {
+        setLikesCount(0);
+      }
+      setSavedCount(0);
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -253,13 +270,27 @@ const Profile = () => {
                   )}
                 </div>
                 <p className="text-muted-foreground text-sm">{user.email}</p>
-                <div className="flex items-center space-x-2 mt-2">
-                  <Badge variant="secondary" className="bg-gray-500 text-white">
-                    year
+                <div className="flex items-center gap-2 mt-3">
+                  <Link to="/profile/edit">
+                    <Button size="sm" variant="outline" className="rounded-full px-4">Edit profile</Button>
+                  </Link>
+                  <Badge variant="secondary" className="rounded-full px-3">
+                    {subscription ? 'Active Subscription' : 'Free'}
                   </Badge>
-                  <Badge variant="outline" className="border-gray-500">
-                    {userProfile?.gender || 'male'}
-                  </Badge>
+                </div>
+                <div className="flex gap-8 mt-4 text-muted-foreground">
+                  <div className="text-center">
+                    <div className="text-lg font-semibold text-foreground">{viewsCount}</div>
+                    <div className="text-xs">views</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-semibold text-foreground">{likesCount}</div>
+                    <div className="text-xs">likes</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-semibold text-foreground">{savedCount}</div>
+                    <div className="text-xs">saved</div>
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -278,44 +309,6 @@ const Profile = () => {
           </CardContent>
         </Card>
 
-        {/* Active Subscription */}
-        <Card className="border-none bg-card/50">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center space-x-2">
-              <Crown className="h-5 w-5 text-yellow-400" />
-              <span className="text-lg font-semibold">Active Subscription</span>
-            </div>
-            <p className="text-muted-foreground text-sm">Your premium features are active</p>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span>Plan</span>
-                <Badge variant="secondary" className="bg-gray-500 text-white">
-                  {subscription?.plan_type || 'year'}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Expires</span>
-                <span className="text-muted-foreground">
-                  {subscription ? new Date(subscription.expires_at).toLocaleDateString() : '7/21/2026'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Amount</span>
-                <span className="font-medium">
-                  {subscription ? 
-                    `${CURRENCIES.find(c => c.code === subscription.currency)?.symbol || '$'}${subscription.amount}` : 
-                    '₹2499'
-                  }
-                </span>
-              </div>
-              <Button variant="outline" className="w-full bg-transparent border-gray-600">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Manage Subscription
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Your Posts */}
         <Card className="border-none bg-card/50">
@@ -324,11 +317,14 @@ const Profile = () => {
             {confessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">You haven't posted anything yet.</p>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {confessions.map((c) => (
                   <Link key={c.id} to={`/confession/${c.id}`} className="block">
-                    <div className="aspect-square rounded-md bg-muted flex items-center justify-center p-2 hover-scale">
-                      <span className="text-xs line-clamp-4 text-center">
+                    <div className="rounded-2xl border bg-card p-3 h-48 flex flex-col justify-between hover-scale">
+                      {c.category && (
+                        <span className="text-[11px] px-2 py-1 rounded-full bg-primary/15 text-primary w-fit">{c.category}</span>
+                      )}
+                      <span className="text-base leading-tight line-clamp-5">
                         {c.title || c.content || 'Voice confession'}
                       </span>
                     </div>
