@@ -3,14 +3,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  User, Crown, Palette, Bell, Shield, CreditCard, 
-  LogOut, Settings, Edit, CheckCircle, Moon, Volume, Lock
-} from "lucide-react";
+import { User, Crown, Settings, Edit } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,7 +71,7 @@ const COUNTRIES = [
 ];
 
 const Profile = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
@@ -214,9 +207,6 @@ const Profile = () => {
     return colors[type as keyof typeof colors] || 'bg-gray-500';
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
 
   if (!user) {
     return (
@@ -335,56 +325,8 @@ const Profile = () => {
           </CardContent>
         </Card>
 
-        {/* Settings */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Settings</h2>
-          
-          <Card className="border-none bg-card/50">
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Bell className="h-5 w-5 text-muted-foreground" />
-                  <span>Push Notifications</span>
-                </div>
-                <Switch />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Lock className="h-5 w-5 text-muted-foreground" />
-                  <span>Privacy Mode</span>
-                </div>
-                <Switch defaultChecked className="data-[state=checked]:bg-purple-500" />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Moon className="h-5 w-5 text-muted-foreground" />
-                  <span>Dark Theme</span>
-                </div>
-                <Switch defaultChecked className="data-[state=checked]:bg-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Account Settings Button */}
-        <Link to="/settings">
-          <Button variant="outline" className="w-full justify-start">
-            <Settings className="h-4 w-4 mr-2" />
-            Account Settings
-          </Button>
-        </Link>
 
-        {/* Sign Out Button */}
-        <Button 
-          variant="outline" 
-          className="w-full justify-start text-red-400 hover:text-red-300 border-gray-600 bg-transparent"
-          onClick={handleSignOut}
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
-        </Button>
 
       </div>
 
