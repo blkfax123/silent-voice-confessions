@@ -256,7 +256,7 @@ const Profile = () => {
         {/* User Info Header */}
         <Card className="border-none bg-card/50">
           <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-start gap-4">
               <div className="h-16 w-16 rounded-full bg-purple-500/20 flex items-center justify-center">
                 <User className="h-8 w-8 text-purple-400" />
               </div>
@@ -270,7 +270,7 @@ const Profile = () => {
                   )}
                 </div>
                 <p className="text-muted-foreground text-sm">{user.email}</p>
-                <div className="flex items-center gap-2 mt-3">
+                <div className="flex flex-wrap items-center gap-2 mt-3 pr-14">
                   <Link to="/profile/edit">
                     <Button size="sm" variant="outline" className="rounded-full px-4">Edit profile</Button>
                   </Link>
@@ -293,7 +293,7 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2 ml-auto">
+              <div className="flex gap-2 ml-auto shrink-0 self-start">
                 <Link to="/settings">
                   <Button variant="outline" size="sm" aria-label="Settings">
                     <Settings className="h-4 w-4" />
