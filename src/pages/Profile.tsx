@@ -251,7 +251,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-28">
       <div className="p-4 space-y-4">
         {/* User Info Header */}
         <Card className="border-none bg-card/50">
@@ -260,9 +260,9 @@ const Profile = () => {
               <div className="h-16 w-16 rounded-full bg-purple-500/20 flex items-center justify-center">
                 <User className="h-8 w-8 text-purple-400" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <h2 className={`text-xl font-bold ${getUsernameColor(userProfile?.subscription_type || 'free')}`}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <h2 className={`text-xl font-bold truncate ${getUsernameColor(userProfile?.subscription_type || 'free')}`}>
                     {userProfile?.username || 'blkfax1'}
                   </h2>
                   {userProfile?.subscription_type !== 'free' && (
@@ -293,7 +293,7 @@ const Profile = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 ml-auto">
                 <Link to="/settings">
                   <Button variant="outline" size="sm" aria-label="Settings">
                     <Settings className="h-4 w-4" />
