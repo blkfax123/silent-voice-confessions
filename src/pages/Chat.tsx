@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,10 +35,14 @@ import { useToast } from "@/hooks/use-toast";
 const Chat = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { id: routeRoomId } = useParams();
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const onlineChannelRef = useRef<any>(null);
+  const queueChannelRef = useRef<any>(null);
   
   // Core states
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -76,45 +80,86 @@ const Chat = () => {
   ];
 
   useEffect(() => {
-    if (user) {
-      // Update user's last_seen and online status when they visit chat
-      updateUserPresence();
-      
-      fetchUserProfile();
-      fetchActiveRooms();
-      fetchOnlineCount();
-      
-      // Setup real-time presence
-      const channel = supabase.channel('online-users')
-        .on('presence', { event: 'sync' }, () => {
-          const state = channel.presenceState();
-          setOnlineCount(Object.keys(state).length);
-        })
-        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-          console.log('User joined:', key, newPresences);
-        })
-        .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-          console.log('User left:', key, leftPresences);
-        });
+    if (!user) return;
 
-      channel.subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
-        }
+    updateUserPresence();
+    fetchUserProfile();
+    fetchActiveRooms();
+
+    // Setup real-time online presence with a stable key
+    const onlineChannel = supabase.channel('online-presence', {
+      config: { presence: { key: user.id } }
+    })
+      .on('presence', { event: 'sync' }, () => {
+        const state = onlineChannel.presenceState() as Record<string, any[]>;
+        setOnlineCount(Object.keys(state).length);
+      })
+      .on('presence', { event: 'join' }, () => {
+        const state = onlineChannel.presenceState() as Record<string, any[]>;
+        setOnlineCount(Object.keys(state).length);
+      })
+      .on('presence', { event: 'leave' }, () => {
+        const state = onlineChannel.presenceState() as Record<string, any[]>;
+        setOnlineCount(Object.keys(state).length);
       });
 
-      // Update presence every 30 seconds
-      const presenceInterval = setInterval(updateUserPresence, 30000);
+    onlineChannel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await onlineChannel.track({ user_id: user.id, online_at: new Date().toISOString() });
+      }
+    });
 
-      return () => {
-        channel.unsubscribe();
-        clearInterval(presenceInterval);
-      };
-    }
+    onlineChannelRef.current = onlineChannel;
+
+    // Ensure we flip DB is_online periodically and on unload
+    const presenceInterval = setInterval(updateUserPresence, 30000);
+
+    const handleBeforeUnload = async () => {
+      try {
+        await supabase.from('users').update({ is_online: false }).eq('id', user.id);
+      } catch {}
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      if (onlineChannelRef.current) {
+        supabase.removeChannel(onlineChannelRef.current);
+        onlineChannelRef.current = null;
+      }
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      clearInterval(presenceInterval);
+    };
   }, [user]);
+  useEffect(() => {
+    const loadRoomByParam = async () => {
+      if (!user || !routeRoomId) return;
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('chat_rooms')
+          .select('*')
+          .eq('id', routeRoomId)
+          .single();
+        if (!error && data && (data.user1_id === user.id || data.user2_id === user.id)) {
+          setCurrentRoom(data);
+          setWaitingForMatch(false);
+        } else {
+          toast({ title: 'Cannot join', description: 'You are not a participant in this room.' });
+          navigate('/chat', { replace: true });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadRoomByParam();
+  }, [routeRoomId, user]);
 
   useEffect(() => {
     if (currentRoom) {
+      // If we were waiting in queue, stop tracking
+      if (queueChannelRef.current) {
+        try { queueChannelRef.current.untrack(); } catch {}
+      }
       fetchMessages();
       setupMessageSubscription();
       setupTypingSubscription();
@@ -331,116 +376,64 @@ const Chat = () => {
     setWaitingForMatch(true);
     
     try {
-      // Use a transaction-like approach to handle race conditions
-      // First try to join an existing waiting room
-      let matchFound = false;
-      
-      for (let attempt = 0; attempt < 3 && !matchFound; attempt++) {
-        const { data: waitingRooms, error: waitingError } = await supabase
-          .from('chat_rooms')
-          .select('*')
-          .eq('room_type', 'random')
-          .eq('is_active', false)
-          .is('user2_id', null)
-          .neq('user1_id', user.id)
-          .order('created_at', { ascending: true })
-          .limit(1);
+      // Ensure waiting queue channel exists and is subscribed
+      if (!queueChannelRef.current) {
+        const qc = supabase.channel('waiting-queue', {
+          config: { presence: { key: user.id } }
+        })
+          .on('broadcast', { event: 'matched' }, async (payload) => {
+            const { roomId, a, b } = (payload as any).payload || {};
+            if (a === user.id || b === user.id) {
+              setWaitingForMatch(false);
+              navigate(`/chat/${roomId}`);
+            }
+          });
 
-        if (!waitingError && waitingRooms && waitingRooms.length > 0) {
-          const waitingRoom = waitingRooms[0];
-          
-          // Try to join this room
-          const { data: joinedRoom, error: joinError } = await supabase
-            .from('chat_rooms')
-            .update({
-              user2_id: user.id,
-              is_active: true
-            })
-            .eq('id', waitingRoom.id)
-            .eq('user2_id', null) // Only update if still available
-            .select()
-            .maybeSingle();
-
-          // If we successfully joined, we're done
-          if (!joinError && joinedRoom) {
-            setCurrentRoom(joinedRoom);
-            setWaitingForMatch(false);
-            setLoading(false);
-            toast({
-              title: "Chat started!",
-              description: "You've been connected with a stranger.",
-            });
-            return;
+        await qc.subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await qc.track({ user_id: user.id, queued_at: new Date().toISOString() });
           }
-        }
-        
-        // Wait a bit before retrying
-        if (attempt < 2) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
+        });
+        queueChannelRef.current = qc;
+      } else {
+        try { await queueChannelRef.current.track({ user_id: user.id, queued_at: new Date().toISOString() }); } catch {}
       }
 
-      // If no existing room found, create new waiting room
-      const { data: newRoom, error: roomError } = await supabase
-        .from('chat_rooms')
-        .insert({
-          user1_id: user.id,
-          room_type: 'random',
-          is_active: false
-        })
-        .select()
-        .single();
+      const qc = queueChannelRef.current;
 
-      if (roomError) throw roomError;
+      const attemptMatch = async () => {
+        const state = qc.presenceState() as Record<string, any[]>;
+        const others = Object.keys(state).filter((k) => k !== user.id && (state[k]?.length ?? 0) > 0);
 
-      // Wait for someone to join
-      let attempts = 0;
-      const maxAttempts = 30; // 30 seconds
-      
-      const checkForPartner = async () => {
-        const { data: updatedRoom, error } = await supabase
-          .from('chat_rooms')
-          .select('*')
-          .eq('id', newRoom.id)
-          .single();
+        if (others.length > 0) {
+          const partnerId = others.sort()[0]; // pick deterministically
+          const initiator = user.id < partnerId; // only one side creates the room
 
-        if (!error && updatedRoom.user2_id && updatedRoom.is_active) {
-          setCurrentRoom(updatedRoom);
-          setWaitingForMatch(false);
-          toast({
-            title: "Chat started!",
-            description: "You've been connected with a stranger.",
-          });
-          return true;
-        }
-        return false;
-      };
-
-      const waitInterval = setInterval(async () => {
-        attempts++;
-        const found = await checkForPartner();
-        
-        if (found || attempts >= maxAttempts) {
-          clearInterval(waitInterval);
-          if (!found) {
-            // Clean up waiting room if no match
-            await supabase
+          if (initiator) {
+            const { data: room, error: roomError } = await supabase
               .from('chat_rooms')
-              .delete()
-              .eq('id', newRoom.id);
-            
-            setWaitingForMatch(false);
-            toast({
-              title: "No match found", 
-              description: "Try again later when more users are online.",
-            });
+              .insert({ user1_id: user.id, user2_id: partnerId, room_type: 'random', is_active: true })
+              .select()
+              .single();
+
+            if (!roomError && room) {
+              await qc.send({ type: 'broadcast', event: 'matched', payload: { roomId: room.id, a: user.id, b: partnerId } });
+              try { await qc.untrack(); } catch {}
+            }
           }
         }
-      }, 1000);
+      };
 
-      fetchActiveRooms();
+      // Try immediately, then also on every presence sync
+      await attemptMatch();
+      qc.on('presence', { event: 'sync' }, async () => {
+        if (waitingForMatch) {
+          await attemptMatch();
+        }
+      });
+
     } catch (error) {
-      console.error('Error starting chat:', error);
+      console.error('Error starting chat via realtime queue:', error);
       setWaitingForMatch(false);
       toast({
         title: "Error",
@@ -710,7 +703,7 @@ const Chat = () => {
         <div className="sticky top-0 bg-background/80 backdrop-blur border-b p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm" onClick={() => setCurrentRoom(null)}>
+              <Button variant="ghost" size="sm" onClick={() => { setCurrentRoom(null); navigate('/chat'); }}>
                 ← Back
               </Button>
               <div className="flex items-center space-x-2">
