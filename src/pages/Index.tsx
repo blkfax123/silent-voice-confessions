@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import RecordButton from "@/components/RecordButton";
 import ConfessionCard from "@/components/ConfessionCard";
@@ -19,30 +19,58 @@ const Index = () => {
   const [showGenderSelection, setShowGenderSelection] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [onlineCount, setOnlineCount] = useState(0);
+  const onlineChannelRef = useRef<any>(null);
 
   useEffect(() => {
     fetchConfessions();
+    let simInterval: any;
+
     if (user) {
       checkUserProfile();
-      fetchRealOnlineCount();
+
+      const channel = supabase.channel('online-presence', {
+        config: { presence: { key: user.id } }
+      })
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState() as Record<string, any[]>;
+          setOnlineCount(Object.keys(state).length);
+        })
+        .on('presence', { event: 'join' }, () => {
+          const state = channel.presenceState() as Record<string, any[]>;
+          setOnlineCount(Object.keys(state).length);
+        })
+        .on('presence', { event: 'leave' }, () => {
+          const state = channel.presenceState() as Record<string, any[]>;
+          setOnlineCount(Object.keys(state).length);
+        });
+
+      channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
+        }
+      });
+
+      onlineChannelRef.current = channel;
     } else {
       // Simulate online count for non-authenticated users
       const baseCount = 45;
       const variation = Math.floor(Math.random() * 20) - 10;
       setOnlineCount(baseCount + variation);
+
+      simInterval = setInterval(() => {
+        const base = 45;
+        const varr = Math.floor(Math.random() * 20) - 10;
+        setOnlineCount(base + varr);
+      }, 30000);
     }
     
-    const interval = setInterval(() => {
-      if (user) {
-        fetchRealOnlineCount();
-      } else {
-        const baseCount = 45;
-        const variation = Math.floor(Math.random() * 20) - 10;
-        setOnlineCount(baseCount + variation);
+    return () => {
+      if (onlineChannelRef.current) {
+        supabase.removeChannel(onlineChannelRef.current);
+        onlineChannelRef.current = null;
       }
-    }, 30000);
-    
-    return () => clearInterval(interval);
+      if (simInterval) clearInterval(simInterval);
+    };
   }, [user]);
 
   const checkUserProfile = async () => {
